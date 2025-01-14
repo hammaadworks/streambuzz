@@ -1,0 +1,23 @@
+{"api": "https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=Kt7hKHlArl8&key={}",
+"response":
+{
+    "kind": "youtube#videoListResponse",
+    "etag": "FbXLUxooIECvHUm3H9EJgZFGsrQ",
+    "items": [
+      {
+        "kind": "youtube#video",
+        "etag": "t8Nw57Or0umoIfJh-_4zdd4QgB8",
+        "id": "Kt7hKHlArl8",
+        "liveStreamingDetails": {
+          "actualStartTime": "2024-03-29T04:08:45Z",
+          "scheduledStartTime": "2024-03-29T04:10:00Z",
+          "concurrentViewers": "768",
+          "activeLiveChatId": "Cg0KC0t0N2hLSGxBcmw4KicKGFVDZkJ3X3V3WmJfb0ZMeVZzaldrNm93URILS3Q3aEtIbEFybDg"
+        }
+      }
+    ],
+    "pageInfo": {
+      "totalResults": 1,
+      "resultsPerPage": 1
+    }
+  }}
