@@ -1,7 +1,6 @@
-
-{"api": "https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId={}&part=snippet,authorDetails&key={}",
-"response":
 {
+  "api": "https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId={}&part=snippet,authorDetails&key={}",
+  "response": {
     "kind": "youtube#liveChatMessageListResponse",
     "etag": "adKx6VUuBSzxMUpci3tdYoPkC70",
     "pollingIntervalMillis": 2078,
@@ -1915,4 +1914,5 @@
         }
       }
     ]
-  }}
+  }
+}

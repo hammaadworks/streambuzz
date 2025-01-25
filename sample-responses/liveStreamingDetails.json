@@ -1,6 +1,7 @@
-{"api": "https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=Kt7hKHlArl8&key={}",
-"response":
 {
+  "_health_api": "https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=Kt7hKHlArl8&key={}",
+  "api": "https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails&id=Kt7hKHlArl8&key={}",
+  "response": {
     "kind": "youtube#videoListResponse",
     "etag": "FbXLUxooIECvHUm3H9EJgZFGsrQ",
     "items": [
@@ -20,4 +21,5 @@
       "totalResults": 1,
       "resultsPerPage": 1
     }
-  }}
+  }
+}
