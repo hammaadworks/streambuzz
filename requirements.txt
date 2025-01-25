@@ -1,0 +1,7 @@
+fastapi==0.115.7
+fastapi-cli==0.0.7
+pydantic==2.10.5
+pydantic_ai==0.0.19
+python-dotenv==1.0.1
+Requests==2.32.3
+supabase==2.11.0
