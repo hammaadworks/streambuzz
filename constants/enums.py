@@ -1,26 +1,23 @@
 from enum import Enum
 
 
-class YoutubeKeyTypeEnum(Enum):
-    READ = 0
-    WRITE = 1
-
-
 class StreamerIntentEnum(Enum):
-    START_STREAM_STREAMER_INTENT = 0
-    GET_CURRENT_BUZZ_STREAMER_INTENT = 1
-    GET_NEXT_BUZZ_STREAMER_INTENT = 2
-    REPLY_TO_BUZZ_STREAMER_INTENT = 3
-    UNKNOWN_STREAMER_INTENT = 4
+    START_STREAM = 0
+    CURRENT_BUZZ = 1
+    NEXT_BUZZ = 2
+    POST_REPLY = 3
+    UNKNOWN = 4
 
-
-class ChatIntentEnum(Enum):
-    QUESTION_CHAT = "Question"
-    CONCERN_CHAT = "Concern"
-    REQUEST_CHAT = "Request"
-    UNKNOWN_CHAT = "Unknown"
 
 class BuzzStatusEnum(Enum):
     FOUND = 0
-    READ = 1
-    ACTED = 2
+    PROCESSED = 1
+    ACTIVE = 2
+    INACTIVE = 3
+
+
+class ChatIntentEnum(Enum):
+    UNKNOWN = 0
+    QUESTION = 1
+    CONCERN = 2
+    REQUEST = 3

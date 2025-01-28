@@ -1,6 +1,6 @@
 import re
 import time
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 import requests
 from cachetools.func import ttl_cache
@@ -79,10 +79,10 @@ async def get_stream_metadata(video_id: str):
         params = {
             "part": "liveStreamingDetails,snippet",
             "id": video_id,
-        }
+            }
         response = await get_request_with_retries(
             YOUTUBE_API_ENDPOINT, params, api_keys, use_keys=True
-        )
+            )
 
         return response
     except UserError as ue:
@@ -118,10 +118,10 @@ async def post_request_with_retries(url, params, payload, api_keys, use_keys=Fal
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {key_dict['access_token']}",
-            }
+                }
             response = requests.post(
                 url, headers=headers, params=params, data=payload, timeout=10
-            )
+                )
 
         try:
             if response.status_code == 200:
@@ -129,15 +129,16 @@ async def post_request_with_retries(url, params, payload, api_keys, use_keys=Fal
 
             # Log the failure
             print(
-                f"Attempt {attempt + 1}: {response.status_code=}\nBody={response.json()}. Retrying..."
-            )
+                f"Attempt {attempt + 1}: {response.status_code=}\nBody="
+                f"{response.json()}. Retrying..."
+                )
 
         except requests.exceptions.RequestException as e:
             # Log the exception
             print(
                 f"Error>> {str(e)}\nAttempt {attempt + 1}: {response.status_code=}\n"
                 f"body={response.json()}. Retrying..."
-            )
+                )
 
         # Retry after a short delay
         time.sleep(2)
@@ -170,7 +171,7 @@ async def get_request_with_retries(url, params, api_keys, use_keys=True):
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {key_dict['access_token']}",
-            }
+                }
             response = requests.get(url, headers=headers, params=params, timeout=10)
 
         try:
@@ -179,15 +180,16 @@ async def get_request_with_retries(url, params, api_keys, use_keys=True):
 
             # Log the failure
             print(
-                f"Attempt {attempt + 1}: {response.status_code=}\nBody={response.json()}. Retrying..."
-            )
+                f"Attempt {attempt + 1}: {response.status_code=}\nBody="
+                f"{response.json()}. Retrying..."
+                )
 
         except requests.exceptions.RequestException as e:
             # Log the exception
             print(
                 f"Error>> {str(e)}\nAttempt {attempt + 1}: {response.status_code=}\n"
                 f"body={response.json()}. Retrying..."
-            )
+                )
 
         # Retry after a short delay
         time.sleep(2)
