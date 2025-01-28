@@ -1,7 +1,12 @@
+APScheduler==3.11.0
+cachetools==5.5.1
 fastapi==0.115.7
-fastapi-cli==0.0.7
-pydantic==2.10.5
-pydantic_ai==0.0.19
+openai==1.60.2
+protobuf==5.29.3
+pydantic==2.10.6
+pydantic_ai==0.0.20
 python-dotenv==1.0.1
 Requests==2.32.3
-supabase==2.11.0
+sentence_transformers==3.4.0
+supabase==2.12.0
+torch==2.5.1
