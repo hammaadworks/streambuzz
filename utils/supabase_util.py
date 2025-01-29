@@ -1,23 +1,42 @@
 from typing import Any, Dict, List, Optional
 
+from constants.constants import (CONVERSATION_CONTEXT, MESSAGES, MODEL_RETRIES,
+                                 STREAMER_KB, SUPABASE_CLIENT, YT_BUZZ,
+                                 YT_KEYS, YT_REPLY, YT_STREAMS)
+from constants.enums import BuzzStatusEnum, StateEnum
 from dotenv import load_dotenv
 from fastapi import HTTPException
-from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
-
-from constants.constants import CONVERSATION_CONTEXT, MODEL_RETRIES, SUPABASE_CLIENT, MESSAGES, YT_KEYS, YT_STREAMS, YT_BUZZ, YT_REPLY, STREAMER_KB
-from constants.enums import BuzzStatusEnum, StateEnum
 from models.agent_models import ProcessedChunk
-from models.youtube_models import StreamBuzzModel, StreamMetadataDB, WriteChatModel
+from models.youtube_models import (StreamBuzzModel, StreamMetadataDB,
+                                   WriteChatModel)
+from pydantic_ai.messages import (ModelRequest, ModelResponse, TextPart,
+                                  UserPromptPart)
 
 # Load environment variables
 load_dotenv()
 
 
 # MESSAGES table queries
-async def fetch_human_session_history(
-        session_id: str, limit: int = 10
-) -> list[str]:
-    """Fetch the most recent human conversation history for a session."""
+async def fetch_human_session_history(session_id: str, limit: int = 10) -> list[str]:
+    """Fetches the most recent human conversation history for a given session.
+
+    This function retrieves a specified number of the most recent messages from the
+    `MESSAGES` table in Supabase, filtering for messages of type "human" and
+    ordering them by creation time in descending order. It then returns a list of
+    message contents, limited by the `CONVERSATION_CONTEXT` constant.
+
+    Args:
+        session_id: The unique identifier of the session.
+        limit: The maximum number of messages to retrieve. Defaults to 10.
+
+    Returns:
+        A list of strings, where each string is the content of a human message.
+        The list is limited by the `CONVERSATION_CONTEXT` constant.
+
+    Raises:
+        HTTPException: If an error occurs during the database query, with a 500
+        status code and error details.
+    """
     try:
         response = (
             SUPABASE_CLIENT.table(MESSAGES)
@@ -41,9 +60,28 @@ async def fetch_human_session_history(
 
 
 async def fetch_conversation_history(
-        session_id: str, limit: int = 10
+    session_id: str, limit: int = 10
 ) -> list[ModelRequest | ModelResponse]:
-    """Fetch the most recent conversation history for a session."""
+    """Fetches the most recent conversation history for a given session.
+
+    This function retrieves a specified number of the most recent messages from the
+    `MESSAGES` table in Supabase, ordering them by creation time in descending
+    order. It then converts the messages into a list of `ModelRequest` or
+    `ModelResponse` objects, based on the message type ("human" or other). The
+    list is returned in chronological order (oldest to newest).
+
+    Args:
+        session_id: The unique identifier of the session.
+        limit: The maximum number of messages to retrieve. Defaults to 10.
+
+    Returns:
+        A list of `ModelRequest` or `ModelResponse` objects, representing the
+        conversation history. The list is in chronological order.
+
+    Raises:
+        HTTPException: If an error occurs during the database query, with a 500
+        status code and error details.
+    """
     try:
         response = (
             SUPABASE_CLIENT.table(MESSAGES)
@@ -78,9 +116,23 @@ async def fetch_conversation_history(
 
 
 async def store_message(
-        session_id: str, message_type: str, content: str, data: Optional[Dict] = None
+    session_id: str, message_type: str, content: str, data: Optional[Dict] = None
 ):
-    """Store a message in the Supabase messages table."""
+    """Stores a message in the Supabase `MESSAGES` table.
+
+    This function inserts a new message into the `MESSAGES` table, including the
+    session ID, message type, content, and any optional data.
+
+    Args:
+        session_id: The unique identifier of the session.
+        message_type: The type of the message (e.g., "human", "ai").
+        content: The content of the message.
+        data: An optional dictionary containing additional message data. Defaults to None.
+
+    Raises:
+        HTTPException: If an error occurs during the database insertion, with a 500
+        status code and error details.
+    """
     message_obj = {"type": message_type, "content": content}
     if data:
         message_obj["data"] = data
@@ -98,7 +150,19 @@ async def store_message(
 
 # YT_KEYS table queries
 async def get_youtube_api_keys() -> List[Dict[str, Any]]:
-    """Fetch the YouTube api keys and access tokens"""
+    """Fetches the YouTube API keys and access tokens from the `YT_KEYS` table.
+
+    This function retrieves all rows from the `YT_KEYS` table, specifically
+    selecting the `api_key` and `access_token` columns.
+
+    Returns:
+        A list of dictionaries, where each dictionary contains an `api_key` and
+        `access_token` key-value pair.
+
+    Raises:
+        HTTPException: If an error occurs during the database query, with a 500
+        status code and error details.
+    """
     try:
         response = (
             SUPABASE_CLIENT.table(YT_KEYS).select("api_key, access_token").execute()
@@ -112,18 +176,23 @@ async def get_youtube_api_keys() -> List[Dict[str, Any]]:
 
 
 # YT_STREAMS table queries
-async def get_active_stream(session_id: str) -> StreamMetadataDB:
-    """
-    Get the active stream for a given session.
+async def get_active_stream(session_id: str) -> Optional[StreamMetadataDB]:
+    """Retrieves the active stream metadata for a given session.
+
+    This function queries the `YT_STREAMS` table to find the active stream
+    associated with the provided `session_id`. A stream is considered active if
+    its `is_active` flag is set to `StateEnum.YES.value`.
 
     Args:
-        session_id (str): The session ID for which to retrieve the active stream.
+        session_id: The unique identifier of the session.
 
     Returns:
-        dict: The active stream for the given session.
+        A `StreamMetadataDB` object containing the metadata of the active stream
+        if found, otherwise None.
 
     Raises:
-        HTTPException: If there is an error retrieving the active stream.
+        HTTPException: If an error occurs during the database query, with a 500
+        status code and error details.
     """
     try:
         response = (
@@ -133,14 +202,16 @@ async def get_active_stream(session_id: str) -> StreamMetadataDB:
             .eq("is_active", StateEnum.YES.value)
             .execute()
         )
+        if not response.data:
+            return None
         active_stream = response.data[0]
         return StreamMetadataDB(
             session_id=active_stream["session_id"],
             video_id=active_stream["video_id"],
             live_chat_id=active_stream["live_chat_id"],
             next_chat_page=active_stream["next_chat_page"],
-            is_active=active_stream["is_active"]
-        ) if active_stream else None
+            is_active=active_stream["is_active"],
+        )
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
         raise HTTPException(
@@ -149,7 +220,18 @@ async def get_active_stream(session_id: str) -> StreamMetadataDB:
 
 
 async def start_stream(stream_metadata_db: StreamMetadataDB):
-    """Store stream details for a given session."""
+    """Stores stream metadata for a given session in the `YT_STREAMS` table.
+
+    This function inserts a new row into the `YT_STREAMS` table with the provided
+    stream metadata.
+
+    Args:
+        stream_metadata_db: A `StreamMetadataDB` object containing the stream metadata.
+
+    Raises:
+        HTTPException: If an error occurs during the database insertion, with a 500
+        status code and error details.
+    """
     try:
         SUPABASE_CLIENT.table(YT_STREAMS).insert(
             {
@@ -157,7 +239,7 @@ async def start_stream(stream_metadata_db: StreamMetadataDB):
                 "video_id": stream_metadata_db.video_id,
                 "live_chat_id": stream_metadata_db.live_chat_id,
                 "next_chat_page": stream_metadata_db.next_chat_page,
-                "is_active": stream_metadata_db.is_active
+                "is_active": stream_metadata_db.is_active,
             }
         ).execute()
     except Exception as e:
@@ -166,14 +248,17 @@ async def start_stream(stream_metadata_db: StreamMetadataDB):
 
 
 async def deactivate_existing_streams(session_id: str):
-    """
-    Update the is_active flag for all streams associated with a given session.
+    """Deactivates all streams associated with a given session.
+
+    This function updates the `is_active` flag to `StateEnum.NO.value` for all
+    rows in the `YT_STREAMS` table that match the provided `session_id`.
 
     Args:
-        session_id (str): The session ID for which to deactivate streams.
+        session_id: The unique identifier of the session.
 
     Raises:
-        HTTPException: If there is an error updating the streams.
+        HTTPException: If an error occurs during the database update, with a 500
+        status code and error details.
     """
     try:
         SUPABASE_CLIENT.table(YT_STREAMS).update({"is_active": StateEnum.NO.value}).eq(
@@ -187,15 +272,19 @@ async def deactivate_existing_streams(session_id: str):
 
 
 async def update_next_chat_page(session_id: str, next_chat_page: str):
-    """
-    Update the next chat page for a given session.
+    """Updates the `next_chat_page` for an active stream of a given session.
+
+    This function updates the `next_chat_page` column in the `YT_STREAMS` table
+    for the active stream associated with the provided `session_id`. A stream is
+    considered active if its `is_active` flag is set to `StateEnum.YES.value`.
 
     Args:
-        session_id (str): The session ID for which to update the next chat page.
-        next_chat_page (str): The next chat page to update.
+        session_id: The unique identifier of the session.
+        next_chat_page: The new value for the `next_chat_page` column.
 
     Raises:
-        HTTPException: If there is an error updating the next chat page.
+        HTTPException: If an error occurs during the database update, with a 500
+        status code and error details.
     """
     try:
         SUPABASE_CLIENT.table(YT_STREAMS).update({"next_chat_page": next_chat_page}).eq(
@@ -210,7 +299,18 @@ async def update_next_chat_page(session_id: str, next_chat_page: str):
 
 # YT_BUZZ table queries
 async def store_buzz(buzz: StreamBuzzModel):
-    """Store a buzz in the Supabase table."""
+    """Stores a buzz event in the `YT_BUZZ` table.
+
+    This function inserts a new row into the `YT_BUZZ` table with the provided
+    buzz details.
+
+    Args:
+        buzz: A `StreamBuzzModel` object containing the buzz details.
+
+    Raises:
+        HTTPException: If an error occurs during the database insertion, with a 500
+        status code and error details.
+    """
     try:
         SUPABASE_CLIENT.table(YT_BUZZ).insert(
             {
@@ -226,18 +326,26 @@ async def store_buzz(buzz: StreamBuzzModel):
         raise HTTPException(status_code=500, detail=f"Failed to store_buzz: {str(e)}")
 
 
-async def get_current_buzz(session_id: str):
-    """
-    Get the current buzz for a given session.
+async def get_current_buzz(session_id: str) -> Optional[Dict[str, Any]]:
+    """Retrieves the most recent active buzz for a given session.
+
+    This function queries the `YT_BUZZ` table to find the most recent active buzz
+    associated with the provided `session_id`. A buzz is considered active if its
+    `buzz_status` is set to `BuzzStatusEnum.ACTIVE.value`. It returns the
+    `buzz_type`, `original_chat`, `author`, and `generated_response` of the
+    found buzz.
 
     Args:
-        session_id (str): The session ID for which to retrieve the current buzz.
+        session_id: The unique identifier of the session.
 
     Returns:
-        list: The current buzz for the given session.
+        A dictionary containing the `buzz_type`, `original_chat`, `author`, and
+        `generated_response` of the current active buzz, or None if no active
+        buzz is found.
 
     Raises:
-        HTTPException: If there is an error retrieving the current buzz.
+        HTTPException: If an error occurs during the database query, with a 500
+        status code and error details.
     """
     try:
         response = (
@@ -250,7 +358,7 @@ async def get_current_buzz(session_id: str):
             .limit(1)
             .execute()
         )
-        return response.data[0]
+        return response.data[0] if response.data else None
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
         raise HTTPException(
@@ -259,14 +367,19 @@ async def get_current_buzz(session_id: str):
 
 
 async def mark_current_buzz_inactive(session_id: str):
-    """
-    Mark the current buzz for a given session to inactive.
+    """Marks the most recent active buzz as inactive for a given session.
+
+    This function updates the `buzz_status` to `BuzzStatusEnum.INACTIVE.value` for
+    the most recent active buzz in the `YT_BUZZ` table that matches the provided
+    `session_id`. A buzz is considered active if its `buzz_status` is set to
+    `BuzzStatusEnum.ACTIVE.value`.
 
     Args:
-        session_id (str): The session ID for which to update the current buzz.
+        session_id: The unique identifier of the session.
 
     Raises:
-        HTTPException: If there is an error updating the current buzz.
+        HTTPException: If an error occurs during the database update, with a 500
+        status code and error details.
     """
     try:
         response = (
@@ -282,24 +395,27 @@ async def mark_current_buzz_inactive(session_id: str):
         if response.data:
             SUPABASE_CLIENT.table(YT_BUZZ).update(
                 {"buzz_status": BuzzStatusEnum.INACTIVE.value}
-            ).eq(
-                "id", response.data[0]["id"]
-            ).execute()
+            ).eq("id", response.data[0]["id"]).execute()
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Failed to update_current_buzz_inactive: {str(e)}"
         )
 
-async def get_found_buzz():
-    """
-    Get all found buzz.
+
+async def get_found_buzz() -> list[Dict[str, Any]]:
+    """Retrieves all buzz events with a status of "FOUND".
+
+    This function queries the `YT_BUZZ` table to retrieve all rows where the
+    `buzz_status` is set to `BuzzStatusEnum.FOUND.value`.
 
     Returns:
-        list: The found buzz.
+        A list of dictionaries, where each dictionary contains the `id`,
+        `buzz_type`, and `original_chat` of a found buzz event.
 
     Raises:
-        HTTPException: If there is an error retrieving the found buzz.
+        HTTPException: If an error occurs during the database query, with a 500
+        status code and error details.
     """
     try:
         response = (
@@ -317,21 +433,22 @@ async def get_found_buzz():
         )
 
 
-async def update_buzz_status_by_id(id, buzz_status):
-    """
-    Update the status of a buzz.
+async def update_buzz_status_by_id(id: int, buzz_status: str):
+    """Updates the status of a specific buzz event by its ID.
+
+    This function updates the `buzz_status` column in the `YT_BUZZ` table for the
+    row that matches the provided `id`.
 
     Args:
-        id (int): The ID of the buzz to update.
-        buzz_status (str): The status to update the buzz to.
+        id: The unique identifier of the buzz event to update.
+        buzz_status: The new status to set for the buzz event.
 
     Raises:
-        HTTPException: If there is an error updating the buzz status.
+        HTTPException: If an error occurs during the database update, with a 500
+        status code and error details.
     """
     try:
-        SUPABASE_CLIENT.table(YT_BUZZ).update(
-            {"buzz_status": buzz_status}
-        ).eq(
+        SUPABASE_CLIENT.table(YT_BUZZ).update({"buzz_status": buzz_status}).eq(
             "id", id
         ).execute()
     except Exception as e:
@@ -341,13 +458,22 @@ async def update_buzz_status_by_id(id, buzz_status):
         )
 
 
-
 async def update_buzz_status_by_session_id(session_id: str, buzz_status: int):
-    """Mark all buzz read for a given session"""
+    """Updates the status of all buzz events for a given session.
+
+    This function updates the `buzz_status` column in the `YT_BUZZ` table for all
+    rows that match the provided `session_id`.
+
+    Args:
+        session_id: The unique identifier of the session.
+        buzz_status: The new status to set for the buzz events.
+
+    Raises:
+        HTTPException: If an error occurs during the database update, with a 500
+        status code and error details.
+    """
     try:
-        SUPABASE_CLIENT.table(YT_BUZZ).update(
-            {"buzz_status": buzz_status}
-        ).eq(
+        SUPABASE_CLIENT.table(YT_BUZZ).update({"buzz_status": buzz_status}).eq(
             "session_id", session_id
         ).execute()
     except Exception as e:
@@ -355,21 +481,24 @@ async def update_buzz_status_by_session_id(session_id: str, buzz_status: int):
         raise HTTPException(
             status_code=500, detail=f"Failed to read_existing_buzz: {str(e)}"
         )
-async def update_buzz_status_batch_by_id(id_list:list[int], buzz_status: int):
-    """
-    Update the status of a list of buzz.
+
+
+async def update_buzz_status_batch_by_id(id_list: list[int], buzz_status: int):
+    """Updates the status of multiple buzz events by their IDs.
+
+    This function updates the `buzz_status` column in the `YT_BUZZ` table for all
+    rows that match the provided list of `id_list`.
 
     Args:
-        id_list (list): The list of IDs of the buzz to update.
-        buzz_status (str): The status to update the buzz to.
+        id_list: A list of unique identifiers of the buzz events to update.
+        buzz_status: The new status to set for the buzz events.
 
     Raises:
-        HTTPException: If there is an error updating the buzz status.
+        HTTPException: If an error occurs during the database update, with a 500
+        status code and error details.
     """
     try:
-        SUPABASE_CLIENT.table(YT_BUZZ).update(
-            {"buzz_status": buzz_status}
-        ).in_(
+        SUPABASE_CLIENT.table(YT_BUZZ).update({"buzz_status": buzz_status}).in_(
             "id", id_list
         ).execute()
     except Exception as e:
@@ -379,32 +508,49 @@ async def update_buzz_status_batch_by_id(id_list:list[int], buzz_status: int):
         )
 
 
-def update_buzz_response_by_id(id:int, generated_response:str):
-    """
-    Update the response of a buzz.
+def update_buzz_response_by_id(id: int, generated_response: str):
+    """Updates the response of a specific buzz event by its ID.
+
+    This function updates the `buzz_status` to `BuzzStatusEnum.ACTIVE.value` and
+    the `generated_response` column in the `YT_BUZZ` table for the row that
+    matches the provided `id`.
 
     Args:
-        id (int): The ID of the buzz to update.
-        generated_response (str): The generated response to update the buzz with.
+        id: The unique identifier of the buzz event to update.
+        generated_response: The new generated response to set for the buzz event.
 
     Raises:
-        HTTPException: If there is an error updating the buzz response.
+        HTTPException: If an error occurs during the database update, with a 500
+        status code and error details.
     """
     try:
         SUPABASE_CLIENT.table(YT_BUZZ).update(
-            {"buzz_status": BuzzStatusEnum.ACTIVE.value, "generated_response": generated_response}
-        ).eq(
-            "id", id
-        ).execute()
+            {
+                "buzz_status": BuzzStatusEnum.ACTIVE.value,
+                "generated_response": generated_response,
+            }
+        ).eq("id", id).execute()
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Failed to update_buzz_response: {str(e)}"
         )
 
+
 # YT_REPLY table queries
 async def store_reply(reply: WriteChatModel):
-    """Store a reply in the Supabase table."""
+    """Stores a chat reply in the `YT_REPLY` table.
+
+    This function inserts a new row into the `YT_REPLY` table with the provided
+    reply details.
+
+    Args:
+        reply: A `WriteChatModel` object containing the reply details.
+
+    Raises:
+        HTTPException: If an error occurs during the database insertion, with a 500
+        status code and error details.
+    """
     try:
         SUPABASE_CLIENT.table(YT_REPLY).insert(
             {
@@ -420,15 +566,20 @@ async def store_reply(reply: WriteChatModel):
         raise HTTPException(status_code=500, detail=f"Failed to store_reply: {str(e)}")
 
 
-def get_unwritten_replies():
-    """
-    Retrieve unwritten chats from the database.
+def get_unwritten_replies() -> list[Dict[str, Any]]:
+    """Retrieves unwritten chat replies from the `YT_REPLY` table.
+
+    This function queries the `YT_REPLY` table to retrieve all rows where the
+    `is_written` flag is set to `StateEnum.NO.value` and the `retry_count` is less
+    than `MODEL_RETRIES`.
 
     Returns:
-        list: A list of unwritten chats.
+        A list of dictionaries, where each dictionary represents an unwritten
+        chat reply.
 
     Raises:
-        HTTPException: If there is an error retrieving the chats.
+        HTTPException: If an error occurs during the database query, with a 500
+        status code and error details.
     """
     try:
         response = (
@@ -447,15 +598,23 @@ def get_unwritten_replies():
 
 
 async def mark_replies_pending(session_id: str):
-    """Mark replies as pending before attempting to write for a given session"""
+    """Marks unwritten replies as pending for a given session.
+
+    This function updates the `is_written` flag to `StateEnum.PENDING.value` for
+    all rows in the `YT_REPLY` table that match the provided `session_id` and
+    have an `is_written` flag set to `StateEnum.NO.value`.
+
+    Args:
+        session_id: The unique identifier of the session.
+
+    Raises:
+        HTTPException: If an error occurs during the database update, with a 500
+        status code and error details.
+    """
     try:
         SUPABASE_CLIENT.table(YT_REPLY).update(
             {"is_written": StateEnum.PENDING.value}
-            ).eq(
-            "session_id", session_id
-        ).eq(
-            "is_written", StateEnum.NO.value
-        ).execute()
+        ).eq("session_id", session_id).eq("is_written", StateEnum.NO.value).execute()
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
         raise HTTPException(
@@ -464,13 +623,23 @@ async def mark_replies_pending(session_id: str):
 
 
 async def mark_replies_success(session_id: str):
-    """Mark replies as success after writing for a given session"""
+    """Marks pending replies as successfully written for a given session.
+
+    This function updates the `is_written` flag to `StateEnum.YES.value` for all
+    rows in the `YT_REPLY` table that match the provided `session_id` and have an
+    `is_written` flag set to `StateEnum.PENDING.value`.
+
+    Args:
+        session_id: The unique identifier of the session.
+
+    Raises:
+        HTTPException: If an error occurs during the database update, with a 500
+        status code and error details.
+    """
     try:
         SUPABASE_CLIENT.table(YT_REPLY).update({"is_written": StateEnum.YES.value}).eq(
             "session_id", session_id
-        ).eq(
-            "is_written", StateEnum.PENDING.value
-        ).execute()
+        ).eq("is_written", StateEnum.PENDING.value).execute()
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
         raise HTTPException(
@@ -479,18 +648,24 @@ async def mark_replies_success(session_id: str):
 
 
 async def mark_replies_failed(session_id: str):
-    """Mark replies as failed after writing for a given session by 
-    1. incrementing retry count
-    2. updating status to NO"""
+    """Marks pending replies as failed and increments the retry count for a given session.
+
+    This function updates the `is_written` flag to `StateEnum.NO.value` and
+    increments the `retry_count` by 1 for all rows in the `YT_REPLY` table that
+    match the provided `session_id` and have an `is_written` flag set to
+    `StateEnum.PENDING.value`.
+
+    Args:
+        session_id: The unique identifier of the session.
+
+    Raises:
+        HTTPException: If an error occurs during the database update, with a 500
+        status code and error details.
+    """
     try:
         SUPABASE_CLIENT.table(YT_REPLY).update(
-            {
-                "is_written": StateEnum.NO.value,
-                "retry_count": {"increment": 1}
-            }
-        ).eq(
-            "session_id", session_id
-        ).eq(
+            {"is_written": StateEnum.NO.value, "retry_count": {"increment": 1}}
+        ).eq("session_id", session_id).eq(
             "is_written", StateEnum.PENDING.value
         ).execute()
     except Exception as e:
@@ -501,7 +676,18 @@ async def mark_replies_failed(session_id: str):
 
 
 async def deactivate_replies(session_id: str):
-    """Mark all buzz read for a given session"""
+    """Deactivates all replies for a given session.
+
+    This function updates the `is_written` flag to `StateEnum.YES.value` for all
+    rows in the `YT_REPLY` table that match the provided `session_id`.
+
+    Args:
+        session_id: The unique identifier of the session.
+
+    Raises:
+        HTTPException: If an error occurs during the database update, with a 500
+        status code and error details.
+    """
     try:
         SUPABASE_CLIENT.table(YT_REPLY).update({"is_written": StateEnum.YES.value}).eq(
             "session_id", session_id
@@ -514,20 +700,21 @@ async def deactivate_replies(session_id: str):
 
 
 # STREAMER_KB table queries
-async def get_kb_file_name(session_id):
-    """
-    Get the previous knowledge base file name for a given session.
+async def get_kb_file_name(session_id: str) -> Optional[str]:
+    """Retrieves the file name of the knowledge base for a given session.
+
+    This function queries the `STREAMER_KB` table to find the `file_name`
+    associated with the provided `session_id`.
 
     Args:
-        session_id (str): The session ID for which to retrieve the previous knowledge
-        base file name.
+        session_id: The unique identifier of the session.
 
     Returns:
-        str: The previous knowledge base file name.
+        The file name of the knowledge base if found, otherwise None.
 
     Raises:
-        HTTPException: If there is an error retrieving the previous knowledge base
-        file name.
+        HTTPException: If an error occurs during the database query, with a 500
+        status code and error details.
     """
     try:
         response = (
@@ -544,17 +731,18 @@ async def get_kb_file_name(session_id):
         )
 
 
-async def delete_previous_kb_entries(session_id):
-    """
-    Delete the previous knowledge base entries for a given session.
+async def delete_previous_kb_entries(session_id: str):
+    """Deletes all knowledge base entries for a given session.
+
+    This function deletes all rows in the `STREAMER_KB` table that match the
+    provided `session_id`.
 
     Args:
-        session_id (str): The session ID for which to delete the previous knowledge
-        base entries.
+        session_id: The unique identifier of the session.
 
     Raises:
-        HTTPException: If there is an error deleting the previous knowledge base
-        entries.
+        HTTPException: If an error occurs during the database deletion, with a 500
+        status code and error details.
     """
     try:
         SUPABASE_CLIENT.table(STREAMER_KB).delete().eq(
@@ -568,7 +756,21 @@ async def delete_previous_kb_entries(session_id):
 
 
 async def insert_chunk(chunk: ProcessedChunk):
-    """Insert a processed chunk into SUPABASE_CLIENT."""
+    """Inserts a processed chunk into the `STREAMER_KB` table.
+
+    This function inserts a new row into the `STREAMER_KB` table with the
+    details of the provided processed chunk.
+
+    Args:
+        chunk: A `ProcessedChunk` object containing the chunk details.
+
+    Returns:
+        The result of the insertion operation.
+
+    Raises:
+        HTTPException: If an error occurs during the database insertion, with a 500
+        status code and error details.
+    """
     try:
         data = {
             "session_id": chunk.session_id,
@@ -590,36 +792,41 @@ async def insert_chunk(chunk: ProcessedChunk):
         )
 
 
-async def get_matching_chunks(query_embedding, session_id):
-    """
-    Get matching chunks for a given query embedding.
+async def get_matching_chunks(
+    query_embedding: List[float], session_id: str
+) -> list[Dict[str, Any]]:
+    """Retrieves matching knowledge base chunks for a given query embedding.
+
+    This function uses the `match_streamer_knowledge` RPC function in Supabase to
+    find the most relevant chunks in the `STREAMER_KB` table based on the
+    provided `query_embedding` and `session_id`. The number of matching chunks
+    returned is limited by the `CONVERSATION_CONTEXT` constant.
 
     Args:
-        query_embedding (list): The query embedding for which to retrieve matching
-        chunks.
-        session_id (str): The session ID for which to retrieve matching chunks.
+        query_embedding: A list of floats representing the query embedding.
+        session_id: The unique identifier of the session.
 
     Returns:
-        list: The matching chunks for the given query embedding.
+        A list of dictionaries, where each dictionary represents a matching
+        knowledge base chunk.
 
     Raises:
-        HTTPException: If there is an error retrieving the matching chunks.
+        HTTPException: If an error occurs during the database query, with a 500
+        status code and error details.
     """
     try:
         response = SUPABASE_CLIENT.rpc(
-            'match_streamer_knowledge',
+            "match_streamer_knowledge",
             {
-                'query_embedding': query_embedding,
-                'user_session_id': session_id,
-                'match_count': CONVERSATION_CONTEXT,
-            }
+                "query_embedding": query_embedding,
+                "user_session_id": session_id,
+                "match_count": CONVERSATION_CONTEXT,
+            },
         ).execute()
-        
+
         return response.data
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get_matching_chunks: {str(e)}"
         )
-
-

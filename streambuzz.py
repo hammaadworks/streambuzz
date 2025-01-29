@@ -1,16 +1,15 @@
 import os
 from contextlib import asynccontextmanager
 
+from agents import orchestrator
 from apscheduler.schedulers.background import BackgroundScheduler
+from constants.constants import (CHAT_READ_INTERVAL, CHAT_WRITE_INTERVAL,
+                                 CONVERSATION_CONTEXT)
 from dotenv import load_dotenv
+from exceptions.user_error import UserError
 from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
-from agents import orchestrator
-from constants.constants import (CHAT_READ_INTERVAL, CHAT_WRITE_INTERVAL,
-                                 CONVERSATION_CONTEXT)
-from exceptions.user_error import UserError
 from models.agent_models import AgentRequest, AgentResponse
 from routers import chat_worker
 from routers.chat_worker import read_live_chats, write_live_chats
@@ -27,13 +26,36 @@ scheduler = BackgroundScheduler()
 # Define lifespan context manager
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    """Lifespan event to start and stop the scheduler."""
+    """
+    Manages the application's lifespan, specifically starting and stopping the scheduler.
+
+    This context manager is used by FastAPI to handle startup and shutdown events.
+    It initializes the background scheduler with jobs for reading and writing live chats,
+    starts the scheduler, and ensures it's properly shut down when the application exits.
+
+    Args:
+        _: The FastAPI application instance (unused).
+
+    Yields:
+        None. The context manager yields control back to FastAPI after starting the scheduler
+        and when the application is shutting down.
+    """
     # Prevent duplicate jobs if app restarts
     if not scheduler.get_job("read_live_chats"):
-        scheduler.add_job(read_live_chats, "interval", seconds=CHAT_READ_INTERVAL, id="read_live_chats")
-    
+        scheduler.add_job(
+            read_live_chats,
+            "interval",
+            seconds=CHAT_READ_INTERVAL,
+            id="read_live_chats",
+        )
+
     if not scheduler.get_job("write_live_chats"):
-        scheduler.add_job(write_live_chats, "interval", seconds=CHAT_WRITE_INTERVAL, id="write_live_chats")
+        scheduler.add_job(
+            write_live_chats,
+            "interval",
+            seconds=CHAT_WRITE_INTERVAL,
+            id="write_live_chats",
+        )
 
     # Start the scheduler
     scheduler.start()
@@ -46,6 +68,7 @@ async def lifespan(_: FastAPI):
     scheduler.shutdown()
     print("Scheduler shut down...")
 
+
 # ✅ Create FastAPI app and pass the lifespan function
 app = FastAPI(lifespan=lifespan)
 app.include_router(chat_worker.router)
@@ -53,19 +76,39 @@ security = HTTPBearer()
 
 # noinspection PyTypeChecker
 app.add_middleware(
-    CORSMiddleware, allow_origins=["*"], allow_credentials=True,
-    allow_methods=["*"], allow_headers=["*"]
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
 def verify_token(
-        credentials: HTTPAuthorizationCredentials = Security(security), ) -> bool:
-    """Verify the bearer token against environment variable."""
+    credentials: HTTPAuthorizationCredentials = Security(security),
+) -> bool:
+    """
+    Verifies the provided bearer token against the configured API token.
+
+    This function is a dependency for FastAPI routes that require authentication.
+    It retrieves the expected token from the environment variable `API_BEARER_TOKEN` and
+    compares it to the token provided in the `Authorization` header.
+
+    Args:
+        credentials: The authentication credentials extracted from the request header.
+
+    Returns:
+        True if the token is valid.
+
+    Raises:
+         HTTPException:
+            - 500: If the `API_BEARER_TOKEN` environment variable is not set.
+            - 401: If the provided token does not match the expected token.
+    """
     expected_token = os.getenv("API_BEARER_TOKEN")
     if not expected_token:
         raise HTTPException(
-            status_code=500,
-            detail="API_BEARER_TOKEN environment variable not set"
+            status_code=500, detail="API_BEARER_TOKEN environment variable not set"
         )
     if credentials.credentials != expected_token:
         raise HTTPException(status_code=401, detail="Invalid authentication token")
@@ -74,23 +117,46 @@ def verify_token(
 
 @app.get("/")
 async def root():
+    """
+    Root endpoint for the API.
+
+    Returns:
+        str: A message indicating that the Chat Worker is running and tasks are scheduled.
+    """
     return "Chat Worker is up and running! Tasks have been Scheduled!"
 
 
 # noinspection PyUnusedLocal
 @app.post("/api/v1/streambuzz", response_model=AgentResponse)
-async def sample_supabase_agent(request: AgentRequest,
-                                authenticated: bool = Depends(verify_token)):
+async def sample_supabase_agent(
+    request: AgentRequest, authenticated: bool = Depends(verify_token)
+):
+    """
+    Processes a user's request using a conversational agent, interacting with Supabase.
+
+    This endpoint receives a user's query, retrieves relevant conversation history from Supabase,
+    sends the query to the agent orchestrator, stores the user's query and the agent's response
+    in Supabase, and returns a success indicator. It also handles potential `UserError` exceptions
+    by generating a polite error message using the orchestrator and stores that in Supabase.
+    General exceptions are caught and an error message is stored in Supabase.
+
+    Args:
+        request: The user's request, including the query, session ID, request ID, and files.
+        authenticated: A boolean indicating if the user is authenticated, derived from the `verify_token` dependency.
+
+    Returns:
+        AgentResponse: An object indicating the success or failure of the request.
+
+    Raises:
+        HTTPException: If an error occurs during the agent interaction or database operations.
+    """
     try:
         # Fetch conversation history from the DB
         messages = await fetch_conversation_history(
-            request.session_id,
-            CONVERSATION_CONTEXT
+            request.session_id, CONVERSATION_CONTEXT
         )
 
-        human_messages = await fetch_human_session_history(
-            request.session_id
-        )
+        human_messages = await fetch_human_session_history(request.session_id)
 
         # Store user's query with files if present
         message_data = {"request_id": request.request_id}
@@ -99,22 +165,23 @@ async def sample_supabase_agent(request: AgentRequest,
 
         # Store user's query
         await store_message(
-            session_id=request.session_id, message_type="human",
-            content=request.query, data=message_data
+            session_id=request.session_id,
+            message_type="human",
+            content=request.query,
+            data=message_data,
         )
 
         # Get agent's response
         agent_response = await orchestrator.get_response(
-            request=request,
-            human_messages=human_messages,
-            messages=messages
+            request=request, human_messages=human_messages, messages=messages
         )
 
         # Store agent's response
         await store_message(
-            session_id=request.session_id, message_type="ai",
+            session_id=request.session_id,
+            message_type="ai",
             content=agent_response,
-            data={"request_id": request.request_id}
+            data={"request_id": request.request_id},
         )
 
         return AgentResponse(success=True)
@@ -123,16 +190,17 @@ async def sample_supabase_agent(request: AgentRequest,
         print(f"Error>> get_response: {user_error_string}")
         exception_response = await orchestrator.orchestrator_agent.run(
             user_prompt=f"Draft a small polite message to convey the following "
-                        f"error.\n{user_error_string}",
+            f"error.\n{user_error_string}",
             result_type=str,
-            deps=request.session_id
+            deps=request.session_id,
         )
 
         # Store agent's response
         await store_message(
-            session_id=request.session_id, message_type="ai",
+            session_id=request.session_id,
+            message_type="ai",
             content=exception_response.data,
-            data={"request_id": request.request_id}
+            data={"request_id": request.request_id},
         )
 
         return AgentResponse(success=True)
@@ -143,5 +211,6 @@ async def sample_supabase_agent(request: AgentRequest,
             session_id=request.session_id,
             message_type="ai",
             content="I apologize, but I encountered an error processing your request.",
-            data={"error": str(e), "request_id": request.request_id}, )
+            data={"error": str(e), "request_id": request.request_id},
+        )
         return AgentResponse(success=False)

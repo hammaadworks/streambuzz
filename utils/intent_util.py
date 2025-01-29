@@ -1,11 +1,11 @@
 import re
+from typing import List
 
 import torch
-from sentence_transformers import util
-
 from constants.constants import (CHAT_INTENT_EXAMPLES, NLP_MODEL,
                                  STREAMER_INTENT_EXAMPLES, YOUTUBE_URL_REGEX)
 from constants.enums import ChatIntentEnum, StreamerIntentEnum
+from sentence_transformers import util
 
 # Compute embeddings for streamer buzz_type examples
 streamer_intent_embeddings = {}
@@ -30,12 +30,38 @@ for intent, examples in CHAT_INTENT_EXAMPLES.items():
 print("Chat Intent Embeddings generated!!")
 
 
-def contains_valid_youtube_url(user_query):
-    # Regex pattern for YouTube URLs
+def contains_valid_youtube_url(user_query: str) -> bool:
+    """Checks if a given string contains a valid YouTube URL.
+
+    Args:
+        user_query: The string to check for a YouTube URL.
+
+    Returns:
+        True if the string contains a valid YouTube URL, False otherwise.
+    """
     return re.search(YOUTUBE_URL_REGEX, user_query) is not None
 
 
-async def classify_streamer_intent(messages: list[str], query) -> StreamerIntentEnum:
+async def classify_streamer_intent(
+    messages: List[str], query: str
+) -> StreamerIntentEnum:
+    """Classifies the intent of a streamer based on previous messages and the latest query.
+
+    Combines the embeddings of previous messages and the latest query, giving more
+    weight to the latest query. Then, it calculates the cosine similarity between the
+    combined embedding and pre-computed embeddings for each streamer intent. The intent
+    with the highest similarity is returned. If the predicted intent is "START_STREAM"
+    but the query does not contain a valid YouTube URL, the intent is classified as
+    "UNKNOWN".
+
+    Args:
+        messages: A list of previous messages from the user.
+        query: The latest message from the user.
+
+    Returns:
+        The predicted streamer intent as a StreamerIntentEnum value.
+        Returns StreamerIntentEnum.UNKNOWN if an error occurs during classification.
+    """
     try:
         # Encode the messages separately
         previous_messages = " || ".join(messages)
@@ -56,9 +82,7 @@ async def classify_streamer_intent(messages: list[str], query) -> StreamerIntent
         predicted_intent: str = max(similarities, key=similarities.get)
         # If the START_STREAM query doesn't have a valid YouTube URL, classify it as
         # UNKNOWN
-        if predicted_intent == "START_STREAM" and not contains_valid_youtube_url(
-                query
-        ):
+        if predicted_intent == "START_STREAM" and not contains_valid_youtube_url(query):
             predicted_intent = "UNKNOWN"
         return StreamerIntentEnum[predicted_intent.upper()]
     except Exception as e:
@@ -66,7 +90,20 @@ async def classify_streamer_intent(messages: list[str], query) -> StreamerIntent
         return StreamerIntentEnum.UNKNOWN
 
 
-async def classify_chat_intent(chat) -> ChatIntentEnum:
+async def classify_chat_intent(chat: str) -> ChatIntentEnum:
+    """Classifies the intent of a chat message.
+
+    Calculates the cosine similarity between the embedding of the chat message and
+    pre-computed embeddings for each chat intent. The intent with the highest
+    similarity is returned.
+
+    Args:
+        chat: The chat message to classify.
+
+    Returns:
+        The predicted chat intent as a ChatIntentEnum value.
+        Returns ChatIntentEnum.UNKNOWN if an error occurs during classification.
+    """
     try:
         # Encode the query
         chat_embedding = NLP_MODEL.encode(chat, convert_to_tensor=True)
