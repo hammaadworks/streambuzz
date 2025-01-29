@@ -371,27 +371,27 @@ async def get_live_chat_messages(
     # Extract chats as a list of dictionaries with updated displayName formatting
     chats = [
         {
-            "original_chat": item["snippet"]["textMessageDetails"]["messageText"],
+            "original_chat": item.get("snippet").get("displayMessage"),
             "author": (
-                f"@{item['authorDetails']['displayName']}"
+                f"@{item.get('authorDetails').get('displayName')}"
                 + (
                     " (owner)"
-                    if item["authorDetails"].get("isChatOwner", False)
+                    if item.get("authorDetails").get("isChatOwner", False)
                     else ""
                 )
                 + (
                     " (sponsor)"
-                    if item["authorDetails"].get("isChatSponsor", False)
+                    if item.get("authorDetails").get("isChatSponsor", False)
                     else ""
                 )
                 + (
                     " (verified)"
-                    if item["authorDetails"].get("isVerified", False)
+                    if item.get("authorDetails").get("isVerified", False)
                     else ""
                 )
                 + (
                     " (moderator)"
-                    if item["authorDetails"].get("isChatModerator", False)
+                    if item.get("authorDetails").get("isChatModerator", False)
                     else ""
                 )
             ),
@@ -400,7 +400,7 @@ async def get_live_chat_messages(
     ]
 
     # Extract next_chat_page and update the next chat page token
-    next_chat_page = live_chat_response.get("nextPageToken", None)
+    next_chat_page = live_chat_response.get("nextPageToken", "")
     await supabase_util.update_next_chat_page(live_chat_id, next_chat_page)
 
     return chats

@@ -120,7 +120,7 @@ async def start_stream(ctx: RunContext[str], url: str) -> Dict[str, Any]:
             video_id=video_id,
             live_chat_id=live_chat_id,
             session_id=session_id,
-            next_chat_page=None,
+            next_chat_page="",
             is_active=1,
         )
         await supabase_util.start_stream(stream_metadata_db)

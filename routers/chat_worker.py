@@ -83,7 +83,7 @@ async def process_chat_messages(chat_list: List[Dict[str, Any]], session_id: str
     for chat in chat_list:
         try:
             original_chat, author = chat["original_chat"], chat["author"]
-            chat_intent: ChatIntentEnum = intent_util.classify_chat_intent(
+            chat_intent: ChatIntentEnum = await intent_util.classify_chat_intent(
                 original_chat
             )
 
