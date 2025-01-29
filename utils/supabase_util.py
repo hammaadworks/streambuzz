@@ -348,7 +348,7 @@ async def store_buzz(buzz: StreamBuzzModel):
                 "buzz_type": buzz.buzz_type,
                 "session_id": buzz.session_id,
                 "original_chat": buzz.original_chat,
-                "author": f"@{buzz.author}",
+                "author": buzz.author,
                 "generated_response": buzz.generated_response,
                 "buzz_status": BuzzStatusEnum.FOUND.value,
             }
