@@ -149,7 +149,7 @@ async def store_message(
 
 
 # YT_KEYS table queries
-async def get_youtube_api_keys() -> List[Dict[str, Any]]:
+def get_youtube_api_keys() -> List[Dict[str, Any]]:
     """Fetches the YouTube API keys and access tokens from the `YT_KEYS` table.
 
     This function retrieves all rows from the `YT_KEYS` table, specifically

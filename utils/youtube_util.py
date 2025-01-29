@@ -4,16 +4,17 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 from cachetools.func import ttl_cache
+from requests import HTTPError
+
 from constants.constants import (ALLOWED_DOMAINS, YOUTUBE_API_ENDPOINT,
                                  YOUTUBE_LIVE_API_ENDPOINT)
 from constants.enums import BuzzStatusEnum
 from exceptions.user_error import UserError
-from requests import HTTPError
 from utils import supabase_util
 
 
 @ttl_cache(ttl=180)
-async def get_youtube_api_keys():
+def get_youtube_api_keys():
     """
     Retrieves YouTube API keys from the Supabase database.
 
@@ -27,7 +28,7 @@ async def get_youtube_api_keys():
     Raises:
         Exception: If there's an error retrieving the API keys from the database.
     """
-    return await supabase_util.get_youtube_api_keys()
+    return supabase_util.get_youtube_api_keys()
 
 
 async def validate_and_extract_youtube_id(url: str) -> str:
@@ -114,7 +115,7 @@ async def get_stream_metadata(video_id: str, session_id: str) -> dict:
         Exception: If there's any other unexpected error during the process.
     """
     try:
-        api_keys = await get_youtube_api_keys()
+        api_keys = get_youtube_api_keys()
         params = {
             "part": "liveStreamingDetails,snippet",
             "id": video_id,

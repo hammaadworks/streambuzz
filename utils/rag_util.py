@@ -1,25 +1,61 @@
 import asyncio
 import base64
+import json
 import os
 from typing import Any, Dict, List, Tuple
 
 import google.generativeai as genai
-from agents.orchestrator import orchestrator_agent
+from dotenv import load_dotenv
+
 from constants.constants import (ACCEPTED_FILE_EXTENSION, ACCEPTED_FILE_MIME,
                                  ACCEPTED_FILE_QUANTITY, CHUNK_SIZE,
                                  EMBEDDING_DIMENSIONS, EMBEDDING_MODEL_NAME,
-                                 MAX_FILE_SIZE_B, MAX_FILE_SIZE_MB)
+                                 MAX_FILE_SIZE_B, MAX_FILE_SIZE_MB, OPEN_ROUTER_CLIENT,
+                                 OPEN_ROUTER_MODEL_NAME, SUMMARY, TITLE)
 from constants.prompts import TITLE_SUMMARY_PROMPT
-from dotenv import load_dotenv
 from exceptions.user_error import UserError
 from models.agent_models import AgentRequest, ProcessedChunk
 from utils import supabase_util
 
 load_dotenv()
 
-TITLE = "title"
-SUMMARY = "summary"
 
+async def get_title_and_summary(chunk: str) -> dict:
+    """Extracts the title and summary from a text chunk using an orchestrator agent.
+
+    This function uses an orchestrator agent to process the input chunk and extract
+    the title and summary. It uses the `TITLE_SUMMARY_PROMPT` to guide the agent.
+
+    Args:
+        chunk: The input text string from which to extract the title and summary.
+
+    Returns:
+        A dictionary containing the extracted title and summary. If there's an
+        error during extraction, the dictionary will contain default error messages
+        for title and summary. The keys are 'title' and 'summary'.
+
+    Raises:
+        Any exception encountered during the extraction process is caught, printed to
+        the console, and default error messages are returned.
+    """
+    try:
+        completions = OPEN_ROUTER_CLIENT.chat.completions.create(
+            model=OPEN_ROUTER_MODEL_NAME,
+            messages=[
+                {"role": "system", "content": TITLE_SUMMARY_PROMPT},
+                {"role": "user", "content": f"{chunk[:500]}"}
+            ],
+            response_format={"type": "json_object"}
+        )
+        response: dict = json.loads(completions.choices[0].message.content)
+        response[TITLE] = response.get(TITLE, "Error processing title")
+        response[SUMMARY] = response.get(SUMMARY, "Error processing summary")
+    except Exception as e:
+        print(f"Error getting title and summary: {e}")
+        return {
+            TITLE: "Error processing title",
+            SUMMARY: "Error processing summary",
+        }
 
 async def validate_file(files: List[Dict[str, Any]]) -> str:
     """Validates the uploaded file(s) against size, type, and quantity constraints.
@@ -120,38 +156,6 @@ async def get_embedding(text: str) -> List[float]:
     except Exception as e:
         print(f"Error getting embedding: {e}")
         return [0] * EMBEDDING_DIMENSIONS  # Return zero vector on error
-
-
-async def get_title_and_summary(chunk: str) -> dict:
-    """Extracts the title and summary from a text chunk using an orchestrator agent.
-
-    This function uses an orchestrator agent to process the input chunk and extract
-    the title and summary. It uses the `TITLE_SUMMARY_PROMPT` to guide the agent.
-
-    Args:
-        chunk: The input text string from which to extract the title and summary.
-
-    Returns:
-        A dictionary containing the extracted title and summary. If there's an
-        error during extraction, the dictionary will contain default error messages
-        for title and summary. The keys are 'title' and 'summary'.
-
-    Raises:
-        Any exception encountered during the extraction process is caught, printed to the console, and default error messages are returned.
-    """
-    try:
-        completions = await orchestrator_agent.run(
-            user_prompt=f"{TITLE_SUMMARY_PROMPT}\n{chunk[:500]}", result_type=dict
-        )
-        response: dict = completions.data
-        response[TITLE] = response.get(TITLE, "Error processing title")
-        response[SUMMARY] = response.get(SUMMARY, "Error processing summary")
-    except Exception as e:
-        print(f"Error getting title and summary: {e}")
-        return {
-            TITLE: "Error processing title",
-            SUMMARY: "Error processing summary",
-        }
 
 
 async def process_chunk(

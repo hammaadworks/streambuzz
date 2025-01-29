@@ -1,6 +1,7 @@
 APScheduler==3.11.0
 cachetools==5.5.1
 fastapi==0.115.7
+fastapi-cli==0.0.7
 google-generativeai==0.8.4
 openai==1.60.2
 protobuf==5.29.3

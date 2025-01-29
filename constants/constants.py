@@ -10,6 +10,8 @@ from supabase import create_client
 load_dotenv()
 
 # Files
+TITLE = "title"
+SUMMARY = "summary"
 ACCEPTED_FILE_QUANTITY = 1
 """The number of files accepted for processing."""
 ACCEPTED_FILE_MIME = "text/plain"

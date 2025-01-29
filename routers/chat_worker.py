@@ -2,18 +2,18 @@ import json
 from collections import defaultdict
 from typing import Any, Dict, List
 
+from fastapi import APIRouter
+
 from agents.orchestrator import orchestrator_agent
+from agents.responder import responder_agent
 from constants.constants import YOUTUBE_LIVE_API_ENDPOINT
 from constants.enums import BuzzStatusEnum, ChatIntentEnum
 from constants.prompts import REPLY_SUMMARISER_PROMPT
-from fastapi import APIRouter
 from models.agent_models import ProcessFoundBuzz
 from models.youtube_models import StreamBuzzModel, WriteChatModel
 from utils import intent_util, supabase_util, youtube_util
-from utils.supabase_util import mark_replies_success, store_message
+from utils.supabase_util import store_message
 from utils.youtube_util import get_youtube_api_keys
-
-from ..agents.responder import responder_agent
 
 # Create API router for managing live chats
 router = APIRouter()
@@ -157,7 +157,7 @@ async def read_live_chats():
     responses for the newly created buzzes.
     """
     # Get active stream sessions
-    api_keys = await get_youtube_api_keys()
+    api_keys = get_youtube_api_keys()
     active_streams = await supabase_util.get_active_streams()
     if active_streams:
         await process_active_streams(active_streams, api_keys)
@@ -269,7 +269,7 @@ async def write_live_chats():
                     url=YOUTUBE_LIVE_API_ENDPOINT,
                     params=params,
                     payload=payload,
-                    api_keys=await get_youtube_api_keys(),
+                    api_keys=get_youtube_api_keys(),
                 )
                 await supabase_util.mark_replies_success(reply.live_chat_id)
                 await store_message(
@@ -301,6 +301,7 @@ async def read_chats_task():
             not re-raised.
     """
     try:
+        print("Started async background task>> read_live_chats")
         await read_live_chats()
     except Exception as e:
         print(f"Error>> read_chats_task: {str(e)}")
@@ -320,6 +321,7 @@ async def write_chats_task():
             not re-raised.
     """
     try:
+        print("Started async background task>> write_live_chats")
         await write_live_chats()
     except Exception as e:
         print(f"Error>> write_chats_task: {str(e)}")

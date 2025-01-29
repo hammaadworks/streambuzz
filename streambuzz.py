@@ -2,7 +2,7 @@ import os
 from contextlib import asynccontextmanager
 
 from agents import orchestrator
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from constants.constants import (CHAT_READ_INTERVAL, CHAT_WRITE_INTERVAL,
                                  CONVERSATION_CONTEXT)
 from dotenv import load_dotenv
@@ -20,7 +20,7 @@ from utils.supabase_util import (fetch_conversation_history,
 load_dotenv()
 
 # Create the scheduler instance
-scheduler = BackgroundScheduler()
+scheduler = AsyncIOScheduler()
 
 
 # Define lifespan context manager
