@@ -189,8 +189,9 @@ async def sample_supabase_agent(
         user_error_string = str(ue)
         print(f"Error>> get_response: {user_error_string}")
         exception_response = await orchestrator.orchestrator_agent.run(
-            user_prompt=f"Draft a small polite message to convey the following "
-            f"error.\n{user_error_string}",
+            user_prompt=f"Respond with a short polite message within 100 words to "
+                        f"convey the following error.\n{user_error_string}. You can "
+                        f"use emojis sparingly to express yourself.",
             result_type=str,
             deps=request.session_id,
         )

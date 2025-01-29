@@ -204,6 +204,8 @@ async def get_active_streams() -> List[Dict[str, Any]]:
         raise HTTPException(
             status_code=500, detail=f"Failed to get_active_streams: {str(e)}"
         )
+
+
 async def get_active_stream(session_id: str) -> Optional[StreamMetadataDB]:
     """Retrieves the active stream metadata for a given session.
 

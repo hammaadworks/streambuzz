@@ -45,6 +45,16 @@ Attributes:
     deps_type (type): The expected data type of the agent's dependencies, set to `str`.
 """
 
+async def get_active_stream(session_id):
+    active_stream: StreamMetadataDB = await supabase_util.get_active_stream(
+        session_id=session_id
+    )
+    if not active_stream:
+        raise UserError(
+            "You are not moderating any YouTube live stream currently. "
+            "Start a stream by sending a YouTube Live Stream URL"
+            )
+    return active_stream
 
 @buzz_master_agent.tool
 async def get_current_buzz(ctx: RunContext[str]) -> str:
@@ -66,6 +76,7 @@ async def get_current_buzz(ctx: RunContext[str]) -> str:
         Exception: If there is an issue fetching data from the database,
             such as a network error or database query failure.
     """
+    _ = await get_active_stream(session_id=ctx.deps)
     return await supabase_util.get_current_buzz(session_id=ctx.deps)
 
 
@@ -89,6 +100,7 @@ async def get_next_buzz(ctx: RunContext[str]) -> str:
         Exception: If there is an issue interacting with the database,
             such as problems marking the current buzz inactive or fetching the next one.
     """
+    _ = await get_active_stream(session_id=ctx.deps)
     await supabase_util.mark_current_buzz_inactive(session_id=ctx.deps)
     return await supabase_util.get_current_buzz(session_id=ctx.deps)
 
@@ -116,11 +128,7 @@ async def store_reply(ctx: RunContext[str], reply: str) -> str:
             storing the reply in the database. The error message provides details about the failure.
     """
     try:
-        active_stream: StreamMetadataDB = await supabase_util.get_active_stream(
-            session_id=ctx.deps
-        )
-        if not active_stream:
-            raise UserError("No active stream found.")
+        active_stream = await get_active_stream(session_id=ctx.deps)
         await supabase_util.store_reply(
             WriteChatModel(
                 session_id=active_stream.session_id,

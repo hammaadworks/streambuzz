@@ -10,7 +10,7 @@ responder_agent = Agent(
     model=PYDANTIC_AI_MODEL,
     name="responder_agent",
     end_strategy="early",
-    model_settings=ModelSettings(temperature=0.0),
+    model_settings=ModelSettings(temperature=0.5),
     system_prompt=RESPONDER_SYSTEM_PROMPT,
     result_type=str,
     result_tool_name="respond",

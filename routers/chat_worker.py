@@ -45,8 +45,8 @@ async def process_buzz():
     for buzz in found_buzz_object_list:
         try:
             response = await responder_agent.run(
-                user_prompt=f"{ChatIntentEnum(buzz.buzz_type)}: "
-                f"{buzz.original_chat}",
+                user_prompt=f"Generate response within 400 words for this "
+                            f"{ChatIntentEnum(buzz.buzz_type)}:\n{buzz.original_chat}",
                 result_type=str,
             )
             await supabase_util.update_buzz_response_by_id(

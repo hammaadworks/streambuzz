@@ -78,19 +78,19 @@ async def get_response(
                 user_prompt=request.query, deps=request.session_id, result_type=str
             )
             response = agent_result.data + START_STREAM_APPEND
-        elif streamer_intent == StreamerIntentEnum.CURRENT_BUZZ:
+        elif streamer_intent == StreamerIntentEnum.GET_CURRENT:
             agent_result = await buzz_master_agent.run(
                 user_prompt="Get current buzz.",
                 deps=request.session_id,
                 result_type=str,
             )
             response = agent_result.data
-        elif streamer_intent == StreamerIntentEnum.NEXT_BUZZ:
+        elif streamer_intent == StreamerIntentEnum.GET_NEXT:
             agent_result = await buzz_master_agent.run(
                 user_prompt="Get next buzz.", deps=request.session_id, result_type=str
             )
             response = agent_result.data
-        elif streamer_intent == StreamerIntentEnum.POST_REPLY:
+        elif streamer_intent == StreamerIntentEnum.REPLY:
             agent_result = await buzz_master_agent.run(
                 user_prompt=f"Extract and store reply from this message:\n{request.query}",
                 deps=request.session_id,
