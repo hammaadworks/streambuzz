@@ -1,16 +1,17 @@
 from typing import Any, Dict, List, Optional
 
+from dotenv import load_dotenv
+from fastapi import HTTPException
+from pydantic_ai.messages import (ModelRequest, ModelResponse, TextPart,
+                                  UserPromptPart)
+
 from constants.constants import (CONVERSATION_CONTEXT, MESSAGES, MODEL_RETRIES,
                                  STREAMER_KB, SUPABASE_CLIENT, YT_BUZZ,
                                  YT_KEYS, YT_REPLY, YT_STREAMS)
 from constants.enums import BuzzStatusEnum, StateEnum
-from dotenv import load_dotenv
-from fastapi import HTTPException
 from models.agent_models import ProcessedChunk
 from models.youtube_models import (StreamBuzzModel, StreamMetadataDB,
                                    WriteChatModel)
-from pydantic_ai.messages import (ModelRequest, ModelResponse, TextPart,
-                                  UserPromptPart)
 
 # Load environment variables
 load_dotenv()
@@ -695,14 +696,14 @@ async def mark_replies_failed(live_chat_id: str):
     """
     try:
         SUPABASE_CLIENT.table(YT_REPLY).update(
-            {"is_written": StateEnum.NO.value, "retry_count": {"increment": 1}}
-        ).eq("live_chat_id", live_chat_id).eq(
+            {"is_written": StateEnum.NO.value}
+        ).inc({"retry_count": 1}).eq("live_chat_id", live_chat_id).eq(
             "is_written", StateEnum.PENDING.value
         ).execute()
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to read_existing_buzz: {str(e)}"
+            status_code=500, detail=f"Failed to update replies: {str(e)}"
         )
 
 
