@@ -176,7 +176,7 @@ async def get_youtube_api_keys() -> List[Dict[str, Any]]:
 
 
 # YT_STREAMS table queries
-async def get_active_streams():
+async def get_active_streams() -> List[Dict[str, Any]]:
     """Retrieves all active streams from the `YT_STREAMS` table.
 
     This function queries the `YT_STREAMS` table to find all rows where the
@@ -184,6 +184,8 @@ async def get_active_streams():
 
     Returns:
         A list of dictionaries, where each dictionary represents an active stream.
+        Each dictionary contains the 'session_id', 'live_chat_id', and
+        'next_chat_page' keys.
 
     Raises:
         HTTPException: If an error occurs during the database query, with a 500
@@ -602,7 +604,7 @@ async def get_unwritten_replies() -> list[Dict[str, Any]]:
 
     Returns:
         A list of dictionaries, where each dictionary represents an unwritten
-        chat reply.
+        chat reply, containing 'session_id', 'live_chat_id', and 'reply' keys.
 
     Raises:
         HTTPException: If an error occurs during the database query, with a 500

@@ -22,7 +22,7 @@ responder_agent = Agent(
 
 
 @responder_agent.tool
-async def respond(ctx: RunContext[str], user_query: str) -> str|None:
+async def respond(ctx: RunContext[str], user_query: str) -> str | None:
     """Responds to a user query using Retrieval Augmented Generation (RAG).
 
     This tool leverages a knowledge base stored in Supabase to provide contextually

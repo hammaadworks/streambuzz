@@ -33,6 +33,9 @@ print("Chat Intent Embeddings generated!!")
 def contains_valid_youtube_url(user_query: str) -> bool:
     """Checks if a given string contains a valid YouTube URL.
 
+    This function uses a regular expression to determine if the input string
+    matches the expected format of a YouTube URL.
+
     Args:
         user_query: The string to check for a YouTube URL.
 
@@ -47,20 +50,24 @@ async def classify_streamer_intent(
 ) -> StreamerIntentEnum:
     """Classifies the intent of a streamer based on previous messages and the latest query.
 
-    Combines the embeddings of previous messages and the latest query, giving more
-    weight to the latest query. Then, it calculates the cosine similarity between the
-    combined embedding and pre-computed embeddings for each streamer intent. The intent
-    with the highest similarity is returned. If the predicted intent is "START_STREAM"
-    but the query does not contain a valid YouTube URL, the intent is classified as
-    "UNKNOWN".
+    This function leverages sentence embeddings to determine the streamer's intent.
+    It combines the embeddings of previous messages and the latest query, giving
+    more weight to the latest query. Then, it calculates the cosine similarity
+    between the combined embedding and pre-computed embeddings for each streamer
+    intent. The intent with the highest similarity is returned.
+
+    If the predicted intent is "START_STREAM" but the query does not contain a
+    valid YouTube URL, the intent is classified as "UNKNOWN". This prevents
+    incorrect classification when a user intends something else but uses similar
+    wording.
 
     Args:
         messages: A list of previous messages from the user.
         query: The latest message from the user.
 
     Returns:
-        The predicted streamer intent as a StreamerIntentEnum value.
-        Returns StreamerIntentEnum.UNKNOWN if an error occurs during classification.
+        The predicted streamer intent as a `StreamerIntentEnum` value.
+        Returns `StreamerIntentEnum.UNKNOWN` if an error occurs during classification.
     """
     try:
         # Encode the messages separately
@@ -93,16 +100,17 @@ async def classify_streamer_intent(
 async def classify_chat_intent(chat: str) -> ChatIntentEnum:
     """Classifies the intent of a chat message.
 
-    Calculates the cosine similarity between the embedding of the chat message and
-    pre-computed embeddings for each chat intent. The intent with the highest
-    similarity is returned.
+    This function uses sentence embeddings to classify the intent of a given chat
+    message. It calculates the cosine similarity between the embedding of the chat
+    message and pre-computed embeddings for each chat intent. The intent with the
+    highest similarity is returned.
 
     Args:
         chat: The chat message to classify.
 
     Returns:
-        The predicted chat intent as a ChatIntentEnum value.
-        Returns ChatIntentEnum.UNKNOWN if an error occurs during classification.
+        The predicted chat intent as a `ChatIntentEnum` value.
+        Returns `ChatIntentEnum.UNKNOWN` if an error occurs during classification.
     """
     try:
         # Encode the query

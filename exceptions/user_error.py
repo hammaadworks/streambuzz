@@ -13,7 +13,12 @@ class UserError(Exception):
         Initializes a new UserError exception.
 
         Args:
-            message: The error message to display to the user.
+            message: The error message to display to the user. This message
+                should be clear, concise, and informative, explaining the reason
+                for the error.
+
+        Returns:
+            None.
         """
         super().__init__(message)
 

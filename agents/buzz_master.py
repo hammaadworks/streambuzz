@@ -40,7 +40,7 @@ Attributes:
        This is defined by the `BUZZ_MASTER_SYSTEM_PROMPT` constant and provides context for the agent's tasks.
     result_type (type): The expected data type of the agent's output, set to `str`.
     result_tool_name (str): The name of the tool used to return the final result, "execute_task".
-    result_tool_description (str): A description of the result tool.
+    result_tool_description (str): A description of the result tool, "execute tasks and return user friendly response".
     result_retries (int): The number of times to retry the result tool if it fails, set by `MODEL_RETRIES`.
     deps_type (type): The expected data type of the agent's dependencies, set to `str`.
 """

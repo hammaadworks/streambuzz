@@ -171,15 +171,15 @@ async def group_chats_by_session_id(
     Groups unwritten chat messages by session ID, live chat ID, and retry count.
 
     This function takes a list of unwritten chat messages and groups them
-    based on their session ID, live chat ID, and retry count. It then
-    summarizes the grouped messages using an orchestrator agent and creates
-    `WriteChatModel` instances for each group.
+    based on their session ID and live chat ID. It then summarizes the grouped
+    messages using an orchestrator agent and creates `WriteChatModel`
+    instances for each group. The `WriteChatModel` instances contain the
+    original concatenated replies and the summarized reply.
 
     Args:
         unwritten_chats (List[Dict[str, Any]]): A list of dictionaries, where each
             dictionary represents an unwritten chat message and contains at
-            least the keys 'session_id', 'live_chat_id', 'retry_count', and
-            'reply'.
+            least the keys 'session_id', 'live_chat_id', and 'reply'.
 
     Returns:
         List[WriteChatModel]: A list of `WriteChatModel` instances, each
@@ -191,7 +191,7 @@ async def group_chats_by_session_id(
     """
     try:
         # Prepare the desired output
-        grouped_chats = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        grouped_chats = defaultdict(lambda: defaultdict(list))
 
         # Group chats by session_id, live_chat_id
         for row in unwritten_chats:
@@ -211,7 +211,7 @@ async def group_chats_by_session_id(
                         session_id=session_id,
                         live_chat_id=live_chat_id,
                         reply=raw_reply,
-                        reply_summary=reply_summary
+                        reply_summary=reply_summary,
                     )
                 )
         return result
@@ -225,7 +225,7 @@ async def write_live_chats():
     Writes summarized chat replies to YouTube live chats.
 
     This function retrieves unwritten chat replies from the database, groups them
-    by session ID, live chat ID, and retry count, and then uses the YouTube API
+    by session ID and live chat ID, and then uses the YouTube API
     to post the summarized replies to the corresponding live chats. It also
     updates the database to indicate that the replies have been written and
     stores a message in the database indicating that the bot has replied.
@@ -245,7 +245,7 @@ async def write_live_chats():
         grouped_chats: List[WriteChatModel] = await group_chats_by_session_id(
             unwritten_chats_query_response
         )
-        
+
         # Update status of those live_chat_id to PENDING
         for reply in grouped_chats:
             await supabase_util.mark_replies_pending(reply.live_chat_id)

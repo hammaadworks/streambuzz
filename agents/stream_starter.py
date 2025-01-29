@@ -77,10 +77,10 @@ def populate_metadata_class(snippet: Dict[str, Any]) -> StreamMetadata:
 async def start_stream(ctx: RunContext[str], url: str) -> Dict[str, Any]:
     """Start a stream by validating the URL and fetching stream metadata.
 
-    This asynchronous function is decorated as a tool for the `stream_starter_agent`.
-    It takes a YouTube URL, validates it, retrieves the stream metadata, and
-    stores the relevant information in a database. It also deactivates the
-    current session.
+    This asynchronous function is decorated as a tool for the
+    `stream_starter_agent`. It takes a YouTube URL, validates it, retrieves
+    the stream metadata, and stores the relevant information in a database. It
+    also deactivates the current session.
 
     Args:
         ctx: The run context containing dependencies, specifically the session ID.

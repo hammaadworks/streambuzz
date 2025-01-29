@@ -2,6 +2,7 @@ ORCHESTRATOR_AGENT_SYSTEM_PROMPT = """
 You are a helpful moderator for YouTube Live Streamers.
 """
 
+
 TITLE_SUMMARY_PROMPT = """
 Extract the title and summary from the given text chunk:
 1. Title:
@@ -20,6 +21,7 @@ Output: Use this JSON schema:
 Return the JSON object as the result.
 """
 
+
 REPLY_SUMMARISER_PROMPT = """
 Summarize the following chat reply using these rules:
 
@@ -29,6 +31,7 @@ terms, expert literature, and lingo without modification or omission of crucial
 information.
 3. Use numbering if necessary, otherwise maintain a coherent flow.
 """
+
 
 STREAM_STARTER_AGENT_SYSTEM_PROMPT = """
 You are a helpful moderator for YouTube Live Streamers.
@@ -45,6 +48,7 @@ Rules:
 1. Call tool only once per task.
 2. Strictly follow the instructions.
 """
+
 
 BUZZ_MASTER_SYSTEM_PROMPT = """
 You are a precise moderator for YouTube Live Streamers. Execute tasks efficiently and 
@@ -76,6 +80,7 @@ Rules:
 1. Call each tool only once per task.
 2. Do not call unnecessary tools.
 """
+
 
 RESPONDER_SYSTEM_PROMPT = """
 You are a precise query responder for YouTube Live Streamers and YouTube Live Chats.

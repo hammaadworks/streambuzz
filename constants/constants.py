@@ -75,7 +75,7 @@ STREAMER_INTENT_EXAMPLES = {
 }
 """Examples of streamer intents and their corresponding phrases.
 
-    This dictionary maps intent names (keys) to lists of example phrases (values) 
+    This dictionary maps intent names (keys) to lists of example phrases (values)
     that a streamer might use to trigger that intent.
 """
 CHAT_INTENT_EXAMPLES = {
@@ -106,7 +106,7 @@ CHAT_INTENT_EXAMPLES = {
 }
 """Examples of chat intents and their corresponding phrases.
 
-    This dictionary maps intent names (keys) to lists of example phrases (values) 
+    This dictionary maps intent names (keys) to lists of example phrases (values)
     that a chat user might use to express that intent.
 """
 

@@ -4,11 +4,11 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 from cachetools.func import ttl_cache
-from requests import HTTPError
-
-from constants.constants import ALLOWED_DOMAINS, YOUTUBE_API_ENDPOINT, YOUTUBE_LIVE_API_ENDPOINT
+from constants.constants import (ALLOWED_DOMAINS, YOUTUBE_API_ENDPOINT,
+                                 YOUTUBE_LIVE_API_ENDPOINT)
 from constants.enums import BuzzStatusEnum
 from exceptions.user_error import UserError
+from requests import HTTPError
 from utils import supabase_util
 
 
@@ -55,7 +55,7 @@ async def validate_and_extract_youtube_id(url: str) -> str:
         match = re.search(url_pattern, url)
         if not match:
             raise UserError("No URL found in the text.")
-    
+
         # Parse the YouTube URL
         url = match.group()
         parsed_url = urlparse(url)
@@ -94,16 +94,17 @@ async def validate_and_extract_youtube_id(url: str) -> str:
         raise
 
 
-async def get_stream_metadata(video_id: str, session_id: str):
+async def get_stream_metadata(video_id: str, session_id: str) -> dict:
     """
     Retrieves stream metadata for a given YouTube video ID using the YouTube API.
 
     This function takes a YouTube video ID, calls the YouTube API to get
-    live streaming details and snippet information, and returns the API response.
+    live-streaming details and snippet information, and returns the API response.
     It uses a retry mechanism with multiple API keys if the initial request fails.
 
     Args:
         video_id (str): The YouTube video ID to fetch metadata for.
+        session_id (str): The session ID associated with the request.
 
     Returns:
         dict: The JSON response from the YouTube API containing stream metadata.
@@ -131,7 +132,9 @@ async def get_stream_metadata(video_id: str, session_id: str):
         raise
 
 
-async def post_request_with_retries(url, params, payload, api_keys, use_keys=False):
+async def post_request_with_retries(
+    url: str, params: dict, payload: dict, api_keys: list, use_keys: bool = False
+) -> dict:
     """
     Makes a POST request with retries using multiple API keys.
 
@@ -148,13 +151,13 @@ async def post_request_with_retries(url, params, payload, api_keys, use_keys=Fal
                         either an 'api_key' or an 'access_token' and other
                         associated information.
         use_keys (bool): If True, uses 'api_key' for authentication;
-                        otherwise, uses 'access_token'.
+                        otherwise, uses 'access_token'. Defaults to False.
 
     Returns:
         dict: The JSON response from the POST request if successful.
 
     Raises:
-        Exception: If all API keys fail or the maximum number of retries is reached.
+        HTTPError: If all API keys fail or the maximum number of retries is reached.
     """
     for attempt, key_dict in enumerate(api_keys):
         if use_keys:
@@ -193,9 +196,10 @@ async def post_request_with_retries(url, params, payload, api_keys, use_keys=Fal
     raise HTTPError("All API keys failed or maximum retries reached.")
 
 
-async def get_request_with_retries(url, params, api_keys, session_id, use_keys=True):
-    """
-    Makes a GET request with retries using multiple API keys.
+async def get_request_with_retries(
+    url: str, params: dict, api_keys: list, session_id: str, use_keys: bool = True
+) -> dict:
+    """Makes a GET request with retries using multiple API keys.
 
     This function iterates through a list of API keys, attempting to make a GET
     request to the specified URL. If a request fails, it retries with the next key
@@ -208,14 +212,15 @@ async def get_request_with_retries(url, params, api_keys, session_id, use_keys=T
         api_keys (list): A list of dictionaries, where each dictionary contains
                         either an 'api_key' or an 'access_token' and other
                         associated information.
+        session_id (str): The session ID associated with the request.
         use_keys (bool): If True, uses 'api_key' for authentication;
-                        otherwise, uses 'access_token'.
+                        otherwise, uses 'access_token'. Defaults to True.
 
     Returns:
         dict: The JSON response from the GET request if successful.
 
     Raises:
-        Exception: If all API keys fail or the maximum number of retries is reached.
+        HTTPError: If all API keys fail or the maximum number of retries is reached.
     """
     for attempt, key_dict in enumerate(api_keys):
         if use_keys:
@@ -234,17 +239,20 @@ async def get_request_with_retries(url, params, api_keys, session_id, use_keys=T
             error_reason = None
             if 400 <= response.status_code < 500:
                 error_reason = (
-                        response.json()
-                        .get("error", {})
-                        .get("errors", [{}])[0]
-                        .get("reason")
-                    )
+                    response.json()
+                    .get("error", {})
+                    .get("errors", [{}])[0]
+                    .get("reason")
+                )
             if response.status_code == 400:
                 print(f"Bad Request (400): {error_reason}\nBreaking...")
                 break
             elif response.status_code == 403 and error_reason == "liveChatEnded":
                 print("Live Chat Ended: Deactivating stream and breaking...")
-                await deactivate_stream(session_id=session_id, message="The current YouTube Live Stream has ended. You can explore the buzz so far, but replies are disabled. Start a new stream anytime!")
+                await deactivate_stream(
+                    session_id=session_id,
+                    message="The current YouTube Live Stream has ended. You can explore the buzz so far, but replies are disabled. Start a new stream anytime!",
+                )
                 break
             else:
                 print(
@@ -266,7 +274,7 @@ async def get_request_with_retries(url, params, api_keys, session_id, use_keys=T
     raise HTTPError("All API keys failed, maximum retries reached or bad request.")
 
 
-async def deactivate_stream(session_id, message=None):
+async def deactivate_stream(session_id: str, message: str = None) -> None:
     """
     Deactivates all streams and marks all replies as inactive for a given session.
 
@@ -277,6 +285,8 @@ async def deactivate_stream(session_id, message=None):
     Args:
         session_id (str): The session ID for which to mark streams as unavailable
                           and replies as inactive.
+        message (str, optional): A message to store as an agent response.
+                                 Defaults to None.
 
     Raises:
         Exception: If there is an error during the deactivation process.
@@ -297,9 +307,8 @@ async def deactivate_stream(session_id, message=None):
         raise
 
 
-async def deactivate_session(session_id):
-    """
-    Deactivates all streams and marks all buzz as inactive for a given session.
+async def deactivate_session(session_id: str) -> None:
+    """Deactivates all streams and marks all buzz as inactive for a given session.
 
     This function deactivates streams associated with the session, and updates
     the buzz status to inactive for all buzz entries associated with the
@@ -323,20 +332,39 @@ async def deactivate_session(session_id):
         raise
 
 
-async def get_live_chat_messages(session_id, live_chat_id, next_chat_page, api_keys):
-    params = {
-        "part": "snippet, authorDetails",
-        "liveChatId": live_chat_id
-    }
-    if next_chat_page.trim():
-        params["pageToken"] = next_chat_page.trim()
+async def get_live_chat_messages(
+    session_id: str, live_chat_id: str, next_chat_page: str, api_keys: list
+) -> list:
+    """
+    Retrieves live chat messages from YouTube using the Live Chat API.
+
+    This function fetches live chat messages from a specified YouTube live chat,
+    formats the messages, and updates the next page token.
+
+    Args:
+        session_id (str): The session ID associated with the request.
+        live_chat_id (str): The YouTube live chat ID to fetch messages from.
+        next_chat_page (str): The token for the next page of chat messages.
+        api_keys (list): A list of dictionaries, where each dictionary contains
+                         an 'api_key' and other associated information.
+
+    Returns:
+        list: A list of dictionaries, where each dictionary represents a chat
+              message with 'original_chat' and 'author' keys.
+
+    Raises:
+        Exception: If there's an error during the API request or data processing.
+    """
+    params = {"part": "snippet, authorDetails", "liveChatId": live_chat_id}
+    if next_chat_page and next_chat_page.strip():
+        params["pageToken"] = next_chat_page.strip()
     # Fetch live chat messages
     live_chat_response = await get_request_with_retries(
         url=YOUTUBE_LIVE_API_ENDPOINT,
         params=params,
         api_keys=api_keys,
         session_id=session_id,
-        use_keys=True
+        use_keys=True,
     )
 
     # Extract chats as a list of dictionaries with updated displayName formatting
@@ -345,11 +373,27 @@ async def get_live_chat_messages(session_id, live_chat_id, next_chat_page, api_k
             "original_chat": item["snippet"]["textMessageDetails"]["messageText"],
             "author": (
                 f"@{item['authorDetails']['displayName']}"
-                + (" (owner)" if item["authorDetails"].get("isChatOwner", False) else "")
-                + (" (sponsor)" if item["authorDetails"].get("isChatSponsor", False) else "")
-                + (" (verified)" if item["authorDetails"].get("isVerified", False) else "")
-                + (" (moderator)" if item["authorDetails"].get("isChatModerator", False) else "")
-            )
+                + (
+                    " (owner)"
+                    if item["authorDetails"].get("isChatOwner", False)
+                    else ""
+                )
+                + (
+                    " (sponsor)"
+                    if item["authorDetails"].get("isChatSponsor", False)
+                    else ""
+                )
+                + (
+                    " (verified)"
+                    if item["authorDetails"].get("isVerified", False)
+                    else ""
+                )
+                + (
+                    " (moderator)"
+                    if item["authorDetails"].get("isChatModerator", False)
+                    else ""
+                )
+            ),
         }
         for item in live_chat_response.get("items", [])
     ]
@@ -357,5 +401,5 @@ async def get_live_chat_messages(session_id, live_chat_id, next_chat_page, api_k
     # Extract next_chat_page and update the next chat page token
     next_chat_page = live_chat_response.get("nextPageToken", None)
     await supabase_util.update_next_chat_page(live_chat_id, next_chat_page)
-    
+
     return chats
