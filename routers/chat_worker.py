@@ -271,7 +271,7 @@ async def group_chats_by_session_id(
                         session_id=session_id,
                         live_chat_id=live_chat_id,
                         reply=raw_reply,
-                        reply_summary=reply_summary,
+                        reply_summary=reply_summary.data,
                     )
                 )
         return result

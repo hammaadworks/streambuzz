@@ -70,18 +70,13 @@ async def classify_streamer_intent(
         Returns `StreamerIntentEnum.UNKNOWN` if an error occurs during classification.
     """
     try:
-        # Encode the messages separately
-        previous_messages = " || ".join(messages)
-
-        previous_embedding = NLP_MODEL.encode(previous_messages, convert_to_tensor=True)
-        latest_embedding = NLP_MODEL.encode(query, convert_to_tensor=True)
-
-        # Combine embeddings with weights (giving more weight to the latest message)
-        combined_embedding = 0.3 * previous_embedding + 0.7 * latest_embedding
+        print(f"{query} >> {messages}")
+        # Encode the query
+        chat_embedding = NLP_MODEL.encode(query, convert_to_tensor=True)
 
         # Compute cosine similarity with each buzz_type
         similarities = {
-            streamer_intent: util.cos_sim(combined_embedding, intent_embedding).item()
+            streamer_intent: util.cos_sim(chat_embedding, intent_embedding).item()
             for streamer_intent, intent_embedding in streamer_intent_embeddings.items()
         }
 
@@ -90,7 +85,7 @@ async def classify_streamer_intent(
 
         # If confidence is too low, classify as UNKNOWN
         if max_similarity < CONFIDENCE_THRESHOLD:
-            predicted_intent = StreamerIntentEnum.UNKNOWN
+            predicted_intent = "UNKNOWN"
 
         # If the START_STREAM query doesn't have a valid YouTube URL, classify it as
         # UNKNOWN

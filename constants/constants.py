@@ -33,7 +33,7 @@ CONVERSATION_CONTEXT = 3
 """Number of previous messages to include in the conversation context."""
 START_STREAM_APPEND = f"\n\nFetching buzz in {CHAT_READ_INTERVAL} seconds..."
 """Message appended to start of stream."""
-CONFIDENCE_THRESHOLD = 0.69
+CONFIDENCE_THRESHOLD = 0.35
 STREAMER_INTENT_EXAMPLES = {
     "START_STREAM": [
         "Start the stream",
@@ -79,19 +79,6 @@ STREAMER_INTENT_EXAMPLES = {
         "What follows this?",
         "Move to the next topic",
     ],
-    "UNKNOWN": [
-        "What is pydantic ai?",
-        "Use knowledge base to answer",
-        "Use RAG to answer",
-        "Random query",
-        "Unrelated question",
-        "This doesn't fit any category",
-        "Tell me a joke",
-        "Who is the president of Mars?",
-        "Define an impossible concept",
-        "What’s the meaning of life?",
-        "Completely off-topic question",
-    ],
     "REPLY": [
         "Respond to the message",
         "Write a reply",
@@ -105,6 +92,49 @@ STREAMER_INTENT_EXAMPLES = {
         "Answer the user",
         "Type a reply",
         "React to this message",
+        "Post a reply",
+        "Reply with the right words",
+        "Post a reply about this",
+        "Post a reply AI agents are amazing",
+        "Post a reply ...",
+        "Write a reply now",
+        "Reply with a comment",
+        "Reply to this statement",
+        "Write a quick reply",
+        "Post your reply to this",
+        "Draft a reply",
+        "Post a reply regarding this",
+        "Send a reply about this",
+        "Type your reply",
+        "Post a relevant reply",
+        "Post a reply and share thoughts",
+        "Send a reply, AI agents are amazing",
+        "Post a response about AI agents",
+        "Draft a reply based on the topic",
+        "Write a follow-up reply",
+        "Reply to this with context",
+        "Post a meaningful reply",
+        "Reply to this, it’s amazing",
+        "Craft a reply for this statement",
+        "Reply now to this amazing post",
+        "Reply to the message, amazing AI",
+        "Post a proper reply to this query",
+        "Write a thoughtful reply",
+        "Post a reply and expand on this",
+        "Share your reply about AI"
+    ],
+    "UNKNOWN": [
+        "What is pydantic ai?",
+        "Use knowledge base to answer",
+        "Use RAG to answer",
+        "Random query",
+        "Unrelated question",
+        "This doesn't fit any category",
+        "Tell me a joke",
+        "Who is the president of Mars?",
+        "Define an impossible concept",
+        "What’s the meaning of life?",
+        "Completely off-topic question",
     ],
 }
 
