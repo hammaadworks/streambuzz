@@ -6,6 +6,7 @@ import requests
 from cachetools.func import ttl_cache
 
 from constants.constants import ALLOWED_DOMAINS, YOUTUBE_API_ENDPOINT
+from constants.enums import BuzzStatusEnum
 from exceptions.user_error import UserError
 from utils import supabase_util
 
@@ -198,21 +199,7 @@ async def get_request_with_retries(url, params, api_keys, use_keys=True):
     raise Exception("All API keys failed or maximum retries reached.")
 
 
-async def deactivate_session(session_id):
-    """
-    Deactivates all streams and marks all buzz as read and written for a given session.
-    Use:
-    1. When user prompts a new link in the session
-    """
-    try:
-        await mark_stream_unavailable(session_id)
-        await supabase_util.mark_existing_buzz_read(session_id)
-    except Exception as e:
-        print(f"Error>> deactivate_session: {session_id=}\n{str(e)}")
-        raise
-
-
-async def mark_stream_unavailable(session_id):
+async def deactivate_stream(session_id):
     """
     Deactivates all streams and marks all buzz as written for a given session.
 
@@ -224,7 +211,20 @@ async def mark_stream_unavailable(session_id):
     """
     try:
         await supabase_util.deactivate_existing_streams(session_id)
-        await supabase_util.mark_existing_buzz_written(session_id)
+        await supabase_util.deactivate_replies(session_id)
     except Exception as e:
-        print(f"Error>> mark_stream_unavailable: {session_id=}\n{str(e)}")
+        print(f"Error>> deactivate_stream: {session_id=}\n{str(e)}")
+        raise
+
+async def deactivate_session(session_id):
+    """
+    Deactivates all streams and marks all buzz as read and written for a given session.
+    Use:
+    1. When user prompts a new link in the session
+    """
+    try:
+        await deactivate_stream(session_id)
+        await supabase_util.update_buzz_status_by_session_id(session_id, BuzzStatusEnum.INACTIVE.value)
+    except Exception as e:
+        print(f"Error>> deactivate_session: {session_id=}\n{str(e)}")
         raise

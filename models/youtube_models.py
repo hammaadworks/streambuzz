@@ -4,9 +4,9 @@ from pydantic import BaseModel
 
 
 class StreamMetadata(BaseModel):
-    title: str
-    channel_title: str
-    thumbnail_url: str
+    title: Optional[str] = ""
+    channel_title: Optional[str] = ""
+    thumbnail_url: Optional[str] = ""
 
 
 class StreamMetadataDB(StreamMetadata):
@@ -18,22 +18,27 @@ class StreamMetadataDB(StreamMetadata):
 
 
 class BuzzModel(BaseModel):
-    summary: str
-    intent: str
-    response: str
+    buzz_type: str
+    generated_response: str
 
 
 class StreamBuzzModel(BuzzModel):
     session_id: str
-    chat: str
+    original_chat: str
     author: str
     buzz_status: Optional[int] = 0
+    
+class StreamBuzzDisplay(BaseModel):
+    buzz_type: str
+    original_chat: str
+    author: str
+    generated_response: str
 
 
 class WriteChatModel(BaseModel):
     session_id: str
     live_chat_id: str
     retry_count: Optional[int] = 0
-    raw_reply: str
-    reply_summary: str
+    reply: str
+    reply_summary: Optional[str] = ""
     is_written: Optional[int] = 0

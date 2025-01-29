@@ -1,26 +1,30 @@
+from typing import Any, Dict
+
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.settings import ModelSettings
-from typing import Dict, Any
-from constants.constants import MODEL, MODEL_RETRIES
+
+from constants.constants import MODEL_RETRIES, PYDANTIC_AI_MODEL
 from constants.prompts import STREAM_STARTER_AGENT_SYSTEM_PROMPT
 from exceptions.user_error import UserError
 from models.youtube_models import StreamMetadata, StreamMetadataDB
 from utils import supabase_util
-from utils.youtube_util import validate_and_extract_youtube_id, get_stream_metadata, deactivate_session
+from utils.youtube_util import (deactivate_session, get_stream_metadata,
+                                validate_and_extract_youtube_id)
 
 # Create Agent Instance with System Prompt and Result Type
 stream_starter_agent = Agent(
-    model=MODEL,
+    model=PYDANTIC_AI_MODEL,
     name="stream_starter_agent",
     end_strategy="early",
     model_settings=ModelSettings(temperature=0.0),
     system_prompt=STREAM_STARTER_AGENT_SYSTEM_PROMPT,
     result_type=str,
     result_tool_name="start_stream",
-    result_tool_description="get url from user query, validate the url and start the stream.",
+    result_tool_description="get url from user query, validate the url and start the "
+                            "stream.",
     result_retries=MODEL_RETRIES,
     deps_type=str,
-)
+    )
 
 
 def get_live_chat_id(metadata):
@@ -28,7 +32,7 @@ def get_live_chat_id(metadata):
     Extract the live chat ID from the metadata.
 
     Args:
-        metadata (dict): The metadata containing live streaming details.
+        metadata (dict): The metadata containing live-streaming details.
 
     Returns:
         str: The live chat ID.
@@ -43,31 +47,25 @@ def get_live_chat_id(metadata):
         raise UserError("Inactive or invalid stream link.")
 
 
-def populate_metadata_class(video_id, snippet, live_chat_id) -> StreamMetadata:
+def populate_metadata_class(snippet) -> StreamMetadata:
     """
     Populate the StreamMetadata class with video details.
 
     Args:
-        video_id (str): The video ID.
         snippet (dict): The snippet containing video details.
-        live_chat_id (str): The live chat ID.
 
     Returns:
         StreamMetadata: The populated StreamMetadata instance.
     """
     return StreamMetadata(
-
         title=snippet.get("title").strip(),
         channel_title=snippet.get("channelTitle"),
-        thumbnail_url=snippet.get("thumbnails").get("high").get("url"),
-
-    )
+        thumbnail_url=snippet.get("thumbnails").get("high").get("url")
+        )
 
 
 @stream_starter_agent.tool
-async def start_stream(
-        ctx: RunContext[str], url: str
-) -> Dict[str, Any]:
+async def start_stream(ctx: RunContext[str], url: str) -> Dict[str, Any]:
     """
     Start a stream by validating the URL and fetching stream metadata.
 
@@ -93,19 +91,19 @@ async def start_stream(
         video_id = metadata_items[0].get("id")
         snippet = metadata_items[0].get("snippet")
         live_chat_id = get_live_chat_id(metadata_items[0])
-        stream_metadata = populate_metadata_class(video_id, snippet, live_chat_id)
+        stream_metadata = populate_metadata_class(snippet)
 
         # Update flag for session_id
         session_id = ctx.deps
         await deactivate_session(session_id)
-        
+
         # Store metadata in DB
         stream_metadata_db = StreamMetadataDB(
-            **stream_metadata.model_dump(), video_id=video_id, live_chat_id=live_chat_id, session_id=session_id,
-            next_chat_page=None
-        )
+            **stream_metadata.model_dump(), video_id=video_id,
+            live_chat_id=live_chat_id, session_id=session_id,
+            next_chat_page=None, is_active=1
+            )
         await supabase_util.start_stream(stream_metadata_db)
-
         return stream_metadata.model_dump()
     except UserError as ue:
         print(f"Error>> start_stream: {str(ue)}")

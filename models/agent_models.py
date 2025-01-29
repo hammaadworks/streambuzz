@@ -14,6 +14,12 @@ class ProcessedChunk:
     summary: str
     content: str
     embedding: List[float]
+    
+@dataclass
+class ProcessFoundBuzz:
+    id: int
+    buzz_type: str
+    original_chat: str
 
 
 class AgentRequest(BaseModel):

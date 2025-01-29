@@ -129,3 +129,11 @@ YOUTUBE_LIVE_API_ENDPOINT = "https://www.googleapis.com/youtube/v3/liveChat/mess
 SUPABASE_CLIENT = create_client(
     os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY")
     )
+
+# Table names
+MESSAGES = "messages"
+YT_KEYS = "youtube_keys"
+YT_STREAMS = "youtube_streams"
+YT_BUZZ = "youtube_buzz"
+YT_REPLY = "youtube_reply"
+STREAMER_KB = "streamer_knowledge"

@@ -26,28 +26,27 @@ scheduler = BackgroundScheduler()
 
 # Define lifespan context manager
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
+    """Lifespan event to start and stop the scheduler."""
+    # Prevent duplicate jobs if app restarts
+    if not scheduler.get_job("read_live_chats"):
+        scheduler.add_job(read_live_chats, "interval", seconds=CHAT_READ_INTERVAL, id="read_live_chats")
+    
+    if not scheduler.get_job("write_live_chats"):
+        scheduler.add_job(write_live_chats, "interval", seconds=CHAT_WRITE_INTERVAL, id="write_live_chats")
+
     # Start the scheduler
-    scheduler.add_job(
-        read_live_chats, "interval", seconds=CHAT_READ_INTERVAL,
-        id="read_live_chats"
-    )
-    scheduler.add_job(
-        write_live_chats, "interval", seconds=CHAT_WRITE_INTERVAL,
-        id="write_live_chats"
-    )
     scheduler.start()
     print("Scheduler started...")
 
-    # Yield control back to the app
+    # Yield control back to FastAPI
     yield
 
-    # Shutdown the scheduler
+    # Shutdown the scheduler when the app stops
     scheduler.shutdown()
     print("Scheduler shut down...")
 
-
-# Create the FastAPI app
+# ✅ Create FastAPI app and pass the lifespan function
 app = FastAPI(lifespan=lifespan)
 app.include_router(chat_worker.router)
 security = HTTPBearer()
@@ -124,7 +123,9 @@ async def sample_supabase_agent(request: AgentRequest,
         print(f"Error>> get_response: {user_error_string}")
         exception_response = await orchestrator.orchestrator_agent.run(
             user_prompt=f"Draft a small polite message to convey the following "
-                        f"error.\n{user_error_string}"
+                        f"error.\n{user_error_string}",
+            result_type=str,
+            deps=request.session_id
         )
 
         # Store agent's response

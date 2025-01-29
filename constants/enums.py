@@ -11,9 +11,14 @@ class StreamerIntentEnum(Enum):
 
 class BuzzStatusEnum(Enum):
     FOUND = 0
-    PROCESSED = 1
+    PROCESSING = 1
     ACTIVE = 2
     INACTIVE = 3
+    
+class StateEnum(Enum):
+    NO = 0
+    YES = 1
+    PENDING = 2
 
 
 class ChatIntentEnum(Enum):

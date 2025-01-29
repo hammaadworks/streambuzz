@@ -1,17 +1,22 @@
 import asyncio
 import base64
-import json
 import os
 from typing import Any, Dict, List, Tuple
 
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-from constants.constants import (ACCEPTED_FILE_EXTENSION, ACCEPTED_FILE_MIME,
-                                 ACCEPTED_FILE_QUANTITY, CHUNK_SIZE,
-                                 EMBEDDING_DIMENSIONS, EMBEDDING_MODEL_NAME,
-                                 MAX_FILE_SIZE_B, MAX_FILE_SIZE_MB, OPEN_ROUTER_CLIENT,
-                                 OPEN_ROUTER_MODEL_NAME)
+from agents.orchestrator import orchestrator_agent
+from constants.constants import (
+    ACCEPTED_FILE_EXTENSION,
+    ACCEPTED_FILE_MIME,
+    ACCEPTED_FILE_QUANTITY,
+    CHUNK_SIZE,
+    EMBEDDING_DIMENSIONS,
+    EMBEDDING_MODEL_NAME,
+    MAX_FILE_SIZE_B,
+    MAX_FILE_SIZE_MB,
+)
 from constants.prompts import TITLE_SUMMARY_PROMPT
 from exceptions.user_error import UserError
 from models.agent_models import AgentRequest, ProcessedChunk
@@ -28,22 +33,22 @@ async def validate_file(files: List[Dict[str, Any]]) -> str:
         raise UserError(
             f"Only {ACCEPTED_FILE_QUANTITY} file is allowed. You uploaded "
             f"{len(files)} files."
-            )
+        )
     file = files[0]
     if not file["name"].endswith(ACCEPTED_FILE_EXTENSION):
         raise UserError(
             f"Only {ACCEPTED_FILE_QUANTITY} {ACCEPTED_FILE_EXTENSION} file is allowed."
-            )
+        )
     if file["type"] != ACCEPTED_FILE_MIME:
         raise UserError(
             f"Only {ACCEPTED_FILE_QUANTITY} {ACCEPTED_FILE_MIME} file is allowed."
-            )
+        )
     base64_content = file.get("base64")
     estimated_size = (len(base64_content) * 3) // 4 - base64_content.count("=")
     if estimated_size > MAX_FILE_SIZE_B:
         raise UserError(
             f"File exceeds the maximum allowed size of {MAX_FILE_SIZE_MB} MB."
-            )
+        )
     return base64_content
 
 
@@ -56,7 +61,7 @@ async def get_file_contents(files: List[Dict[str, Any]]) -> Tuple[str, str]:
     if len(file_content) > MAX_FILE_SIZE_B:
         raise UserError(
             f"File exceeds the maximum allowed size of {MAX_FILE_SIZE_MB} MB."
-            )
+        )
     return files[0]["name"], file_content
 
 
@@ -74,15 +79,11 @@ async def get_embedding(text: str) -> List[float]:
 async def get_title_and_summary(chunk: str) -> dict:
     """Extract title and summary from chunk of text."""
     try:
-        completions = OPEN_ROUTER_CLIENT.chat.completions.create(
-            model=OPEN_ROUTER_MODEL_NAME,
-            messages=[
-                {"role": "system", "content": TITLE_SUMMARY_PROMPT},
-                {"role": "user", "content": chunk[:500]},
-                ],
-            response_format={"type": "json_object"},
-            )
-        response: dict = json.loads(completions.choices[0].message.content)
+        completions = await orchestrator_agent.run(
+            user_prompt=f"{TITLE_SUMMARY_PROMPT}\n{chunk[:500]}",
+            result_type=dict
+        )
+        response: dict = completions.data
         response[TITLE] = response.get(TITLE, "Error processing title")
         response[SUMMARY] = response.get(SUMMARY, "Error processing summary")
     except Exception as e:
@@ -90,11 +91,12 @@ async def get_title_and_summary(chunk: str) -> dict:
         return {
             TITLE: "Error processing title",
             SUMMARY: "Error processing summary",
-            }
+        }
 
 
-async def process_chunk(chunk_number: int, session_id: str, file_name: str,
-                        chunk: str) -> ProcessedChunk:
+async def process_chunk(
+        chunk_number: int, session_id: str, file_name: str, chunk: str
+) -> ProcessedChunk:
     """Process a single chunk of text."""
     # Get title and summary
     extracted = await get_title_and_summary(chunk)
@@ -110,7 +112,7 @@ async def process_chunk(chunk_number: int, session_id: str, file_name: str,
         summary=extracted[SUMMARY],
         content=chunk,
         embedding=embedding,
-        )
+    )
 
 
 async def chunk_text(text: str, chunk_size: int = CHUNK_SIZE) -> List[str]:
@@ -163,8 +165,9 @@ async def chunk_text(text: str, chunk_size: int = CHUNK_SIZE) -> List[str]:
     return chunks
 
 
-async def process_and_store_document(session_id: str, file_name: str,
-                                     file_content: str):
+async def process_and_store_document(
+        session_id: str, file_name: str, file_content: str
+):
     """Process a document and store its chunks in parallel."""
     # Split into chunks
     chunks = await chunk_text(file_content)
@@ -173,7 +176,7 @@ async def process_and_store_document(session_id: str, file_name: str,
     tasks = [
         process_chunk(index, session_id, file_name, chunk)
         for index, chunk in enumerate(chunks)
-        ]
+    ]
     processed_chunks = await asyncio.gather(*tasks)
 
     # Store chunks in parallel
@@ -184,9 +187,9 @@ async def process_and_store_document(session_id: str, file_name: str,
 async def create_knowledge_base(request: AgentRequest) -> None:
     response_string = ""
     file_name, file_content = await get_file_contents(request.files)
-    previous_file_name: str = await supabase_util.get_previous_kb_file_name(
+    previous_file_name: str = await supabase_util.get_kb_file_name(
         request.session_id
-        )
+    )
     if previous_file_name:
         await supabase_util.delete_previous_kb_entries(request.session_id)
         response_string += f"Discarding previous knowledge base {previous_file_name}.\n"
@@ -195,10 +198,10 @@ async def create_knowledge_base(request: AgentRequest) -> None:
         f"Knowledge base built with {file_name} successfully and ready for use. "
         f"Analyzing a response to your query ..."
     )
-    # Display this to user and use his query in unknown intent
+    # Display this to user and use his query in unknown buzz_type
     await supabase_util.store_message(
         session_id=request.session_id,
         message_type="ai",
         content=response_string,
         data={"request_id": request.request_id},
-        )
+    )
