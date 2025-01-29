@@ -1,4 +1,5 @@
 import json
+import re
 from collections import defaultdict
 from typing import Any, Dict, List
 
@@ -49,9 +50,28 @@ async def process_buzz():
                             f"{ChatIntentEnum(buzz.buzz_type)}:\n{buzz.original_chat}",
                 result_type=str,
             )
+
+            current_buzz = await supabase_util.get_current_buzz(buzz.session_id)
+            if not current_buzz:
+                # Display buzz
+                buzz_message = {"buzz_type": buzz.buzz_type, "original_chat":
+                    buzz.original_chat, "author": buzz.author, "generated_response":
+                    response.data}
+                buzz_message_display = await orchestrator_agent.run(f"""
+                1. Extract: `buzz_type`, `original_chat`, `author`, 
+                `generated_response` from the given json
+                2. Format and return the data in a readable, concise manner. Use 
+                spacing and line breaks for clarity, if required.\n{buzz_message}""")
+                await supabase_util.store_message(
+                    session_id=buzz.session_id,
+                    message_type="ai",
+                    content= buzz_message_display.data
+                )
+
             await supabase_util.update_buzz_response_by_id(
                 id=buzz.id, generated_response=response.data
             )
+
         except Exception as e:
             print(f"Error>> process_buzz: {str(e)}")
             await supabase_util.update_buzz_status_by_id(
@@ -60,6 +80,45 @@ async def process_buzz():
             raise
 
 
+def filter_chat_message(chat: str) -> str:
+    """Filters out unnecessary chat messages before intent classification.
+
+    Removes small talk, one-word messages, and irrelevant content while
+    preserving meaningful text for intent classification.
+
+    Args:
+        chat: The chat message to filter.
+
+    Returns:
+        The filtered chat message, or an empty string if it's considered noise.
+    """
+    # Convert to lowercase to standardize comparison
+    chat = chat.strip().lower()
+
+    # 1. Remove one-word chats (unless it's meaningful)
+    if len(chat.split()) <= 2:
+        return ""  # Empty string indicates noise
+
+    # 2. Remove common small talk or greetings
+    small_talk_patterns = [
+        r"^hi$", r"^hello$", r"^hey$", r"^good morning$", r"^good evening$",
+        r"^how are you\?$", r"^what's up\?$", r"^how's it going\?$",
+        r"^lol$", r"^lmao$", r"^rofl$", r"^haha$", r"^hehe$", r"^great stream$",
+        r"^awesome content$", r"^nice to see you streaming$", r"^keep it up$"
+    ]
+    if any(re.match(pattern, chat) for pattern in small_talk_patterns):
+        return ""  # Empty string indicates noise
+
+    # 3. Filter out chats with just emojis or other uninformative content
+    if re.match(r"^[\U0001F600-\U0001F64F]+$", chat):  # Emoji-only message
+        return ""  # Empty string indicates noise
+
+    # 4. Optionally, filter messages with too many special characters or gibberish
+    if re.match(r"^[^\w\s]+$", chat):  # Non-alphanumeric, no words
+        return ""  # Empty string indicates noise
+
+    # If message passes the filters, return it as is
+    return chat
 async def process_chat_messages(chat_list: List[Dict[str, Any]], session_id: str):
     """
     Processes a list of chat messages for a given session.
@@ -83,21 +142,22 @@ async def process_chat_messages(chat_list: List[Dict[str, Any]], session_id: str
     for chat in chat_list:
         try:
             original_chat, author = chat["original_chat"], chat["author"]
-            chat_intent: ChatIntentEnum = await intent_util.classify_chat_intent(
-                original_chat
-            )
-
-            if chat_intent != ChatIntentEnum.UNKNOWN:
-                await supabase_util.store_buzz(
-                    StreamBuzzModel(
-                        session_id=session_id,
-                        original_chat=original_chat,
-                        author=author,
-                        buzz_status=BuzzStatusEnum.FOUND.value,
-                        buzz_type=chat_intent.value,
-                        generated_response="",
-                    )
+            if filter_chat_message(original_chat):
+                chat_intent: ChatIntentEnum = await intent_util.classify_chat_intent(
+                    original_chat
                 )
+
+                if chat_intent != ChatIntentEnum.UNKNOWN:
+                    await supabase_util.store_buzz(
+                        StreamBuzzModel(
+                            session_id=session_id,
+                            original_chat=original_chat,
+                            author=author,
+                            buzz_status=BuzzStatusEnum.FOUND.value,
+                            buzz_type=chat_intent.value,
+                            generated_response="",
+                        )
+                    )
         except Exception as e:
             # Log the exception for the chat-level failure
             print(f"Error processing chat: {chat}. Exception: {e}")

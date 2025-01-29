@@ -2,7 +2,7 @@ import re
 from typing import List
 
 import torch
-from constants.constants import (CHAT_INTENT_EXAMPLES, NLP_MODEL,
+from constants.constants import (CHAT_INTENT_EXAMPLES, CONFIDENCE_THRESHOLD, NLP_MODEL,
                                  STREAMER_INTENT_EXAMPLES, YOUTUBE_URL_REGEX)
 from constants.enums import ChatIntentEnum, StreamerIntentEnum
 from sentence_transformers import util
@@ -85,8 +85,13 @@ async def classify_streamer_intent(
             for streamer_intent, intent_embedding in streamer_intent_embeddings.items()
         }
 
-        # Find the buzz_type with the highest similarity
-        predicted_intent: str = max(similarities, key=similarities.get)
+        # Find the intent with the highest similarity score
+        predicted_intent, max_similarity = max(similarities.items(), key=lambda x: x[1])
+
+        # If confidence is too low, classify as UNKNOWN
+        if max_similarity < CONFIDENCE_THRESHOLD:
+            predicted_intent = StreamerIntentEnum.UNKNOWN
+
         # If the START_STREAM query doesn't have a valid YouTube URL, classify it as
         # UNKNOWN
         if predicted_intent == "START_STREAM" and not contains_valid_youtube_url(query):
@@ -122,8 +127,12 @@ async def classify_chat_intent(chat: str) -> ChatIntentEnum:
             for chat_intent, intent_embedding in chat_intent_embeddings.items()
         }
 
-        # Find the buzz_type with the highest similarity
-        predicted_intent: str = max(similarities, key=similarities.get)
+        # Find the intent with the highest similarity score
+        predicted_intent, max_similarity = max(similarities.items(), key=lambda x: x[1])
+
+        # If confidence is too low, classify as UNKNOWN
+        if max_similarity < CONFIDENCE_THRESHOLD:
+            return ChatIntentEnum.UNKNOWN
         return ChatIntentEnum[predicted_intent.upper()]
     except Exception as e:
         print(f"Error classifying chat buzz_type: {e}")

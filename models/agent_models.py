@@ -52,6 +52,8 @@ class ProcessFoundBuzz:
     """
 
     id: int
+    session_id: str
+    author: str
     buzz_type: str
     original_chat: str
 

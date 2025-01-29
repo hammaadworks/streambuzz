@@ -33,6 +33,7 @@ CONVERSATION_CONTEXT = 3
 """Number of previous messages to include in the conversation context."""
 START_STREAM_APPEND = f"\n\nFetching buzz in {CHAT_READ_INTERVAL} seconds..."
 """Message appended to start of stream."""
+CONFIDENCE_THRESHOLD = 0.69
 STREAMER_INTENT_EXAMPLES = {
     "START_STREAM": [
         "Start the stream",

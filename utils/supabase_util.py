@@ -451,7 +451,7 @@ async def get_found_buzz() -> list[Dict[str, Any]]:
     try:
         response = (
             SUPABASE_CLIENT.table(YT_BUZZ)
-            .select("id, buzz_type, original_chat")
+            .select("id, session_id, author, buzz_type, original_chat")
             .eq("buzz_status", BuzzStatusEnum.FOUND.value)
             .order("created_at")
             .execute()
