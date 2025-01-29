@@ -4,7 +4,9 @@ from urllib.parse import parse_qs, urlparse
 
 import requests
 from cachetools.func import ttl_cache
-from constants.constants import ALLOWED_DOMAINS, YOUTUBE_API_ENDPOINT
+from requests import HTTPError
+
+from constants.constants import ALLOWED_DOMAINS, YOUTUBE_API_ENDPOINT, YOUTUBE_LIVE_API_ENDPOINT
 from constants.enums import BuzzStatusEnum
 from exceptions.user_error import UserError
 from utils import supabase_util
@@ -49,7 +51,13 @@ async def validate_and_extract_youtube_id(url: str) -> str:
         Exception: If there's any other unexpected error during the process.
     """
     try:
+        url_pattern = r"(https?://|www\.)\S+"
+        match = re.search(url_pattern, url)
+        if not match:
+            raise UserError("No URL found in the text.")
+    
         # Parse the YouTube URL
+        url = match.group()
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
         path = parsed_url.path
@@ -86,7 +94,7 @@ async def validate_and_extract_youtube_id(url: str) -> str:
         raise
 
 
-async def get_stream_metadata(video_id: str):
+async def get_stream_metadata(video_id: str, session_id: str):
     """
     Retrieves stream metadata for a given YouTube video ID using the YouTube API.
 
@@ -111,7 +119,7 @@ async def get_stream_metadata(video_id: str):
             "id": video_id,
         }
         response = await get_request_with_retries(
-            YOUTUBE_API_ENDPOINT, params, api_keys, use_keys=True
+            YOUTUBE_API_ENDPOINT, params, api_keys, session_id, use_keys=True
         )
 
         return response
@@ -182,10 +190,10 @@ async def post_request_with_retries(url, params, payload, api_keys, use_keys=Fal
         time.sleep(2)
 
     # If all attempts fail
-    raise Exception("All API keys failed or maximum retries reached.")
+    raise HTTPError("All API keys failed or maximum retries reached.")
 
 
-async def get_request_with_retries(url, params, api_keys, use_keys=True):
+async def get_request_with_retries(url, params, api_keys, session_id, use_keys=True):
     """
     Makes a GET request with retries using multiple API keys.
 
@@ -223,12 +231,26 @@ async def get_request_with_retries(url, params, api_keys, use_keys=True):
         try:
             if response.status_code == 200:
                 return response.json()
-
-            # Log the failure
-            print(
-                f"Attempt {attempt + 1}: {response.status_code=}\nBody="
-                f"{response.json()}. Retrying..."
-            )
+            error_reason = None
+            if 400 <= response.status_code < 500:
+                error_reason = (
+                        response.json()
+                        .get("error", {})
+                        .get("errors", [{}])[0]
+                        .get("reason")
+                    )
+            if response.status_code == 400:
+                print(f"Bad Request (400): {error_reason}\nBreaking...")
+                break
+            elif response.status_code == 403 and error_reason == "liveChatEnded":
+                print("Live Chat Ended: Deactivating stream and breaking...")
+                await deactivate_stream(session_id=session_id, message="The current YouTube Live Stream has ended. You can explore the buzz so far, but replies are disabled. Start a new stream anytime!")
+                break
+            else:
+                print(
+                    f"Attempt {attempt + 1}: {response.status_code=}\nBody="
+                    f"{response.json()}. Retrying..."
+                )
 
         except requests.exceptions.RequestException as e:
             # Log the exception
@@ -241,10 +263,10 @@ async def get_request_with_retries(url, params, api_keys, use_keys=True):
         time.sleep(2)
 
     # If all attempts fail
-    raise Exception("All API keys failed or maximum retries reached.")
+    raise HTTPError("All API keys failed, maximum retries reached or bad request.")
 
 
-async def deactivate_stream(session_id):
+async def deactivate_stream(session_id, message=None):
     """
     Deactivates all streams and marks all replies as inactive for a given session.
 
@@ -262,6 +284,14 @@ async def deactivate_stream(session_id):
     try:
         await supabase_util.deactivate_existing_streams(session_id)
         await supabase_util.deactivate_replies(session_id)
+        if message:
+            # Store agent's response
+            await supabase_util.store_message(
+                session_id=session_id,
+                message_type="ai",
+                content=message,
+                data={"session_id": f"Deactivated {session_id}"},
+            )
     except Exception as e:
         print(f"Error>> deactivate_stream: {session_id=}\n{str(e)}")
         raise
@@ -291,3 +321,41 @@ async def deactivate_session(session_id):
     except Exception as e:
         print(f"Error>> deactivate_session: {session_id=}\n{str(e)}")
         raise
+
+
+async def get_live_chat_messages(session_id, live_chat_id, next_chat_page, api_keys):
+    params = {
+        "part": "snippet, authorDetails",
+        "liveChatId": live_chat_id
+    }
+    if next_chat_page.trim():
+        params["pageToken"] = next_chat_page.trim()
+    # Fetch live chat messages
+    live_chat_response = await get_request_with_retries(
+        url=YOUTUBE_LIVE_API_ENDPOINT,
+        params=params,
+        api_keys=api_keys,
+        session_id=session_id,
+        use_keys=True
+    )
+
+    # Extract chats as a list of dictionaries with updated displayName formatting
+    chats = [
+        {
+            "original_chat": item["snippet"]["textMessageDetails"]["messageText"],
+            "author": (
+                f"@{item['authorDetails']['displayName']}"
+                + (" (owner)" if item["authorDetails"].get("isChatOwner", False) else "")
+                + (" (sponsor)" if item["authorDetails"].get("isChatSponsor", False) else "")
+                + (" (verified)" if item["authorDetails"].get("isVerified", False) else "")
+                + (" (moderator)" if item["authorDetails"].get("isChatModerator", False) else "")
+            )
+        }
+        for item in live_chat_response.get("items", [])
+    ]
+
+    # Extract next_chat_page and update the next chat page token
+    next_chat_page = live_chat_response.get("nextPageToken", None)
+    await supabase_util.update_next_chat_page(live_chat_id, next_chat_page)
+    
+    return chats

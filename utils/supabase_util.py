@@ -176,6 +176,32 @@ async def get_youtube_api_keys() -> List[Dict[str, Any]]:
 
 
 # YT_STREAMS table queries
+async def get_active_streams():
+    """Retrieves all active streams from the `YT_STREAMS` table.
+
+    This function queries the `YT_STREAMS` table to find all rows where the
+    `is_active` flag is set to `StateEnum.YES.value`.
+
+    Returns:
+        A list of dictionaries, where each dictionary represents an active stream.
+
+    Raises:
+        HTTPException: If an error occurs during the database query, with a 500
+        status code and error details.
+    """
+    try:
+        response = (
+            SUPABASE_CLIENT.table(YT_STREAMS)
+            .select("session_id, live_chat_id, next_chat_page")
+            .eq("is_active", StateEnum.YES.value)
+            .execute()
+        )
+        return response.data
+    except Exception as e:
+        print(f"Error>> Failed at supabase_util: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get_active_streams: {str(e)}"
+        )
 async def get_active_stream(session_id: str) -> Optional[StreamMetadataDB]:
     """Retrieves the active stream metadata for a given session.
 
@@ -271,15 +297,15 @@ async def deactivate_existing_streams(session_id: str):
         )
 
 
-async def update_next_chat_page(session_id: str, next_chat_page: str):
+async def update_next_chat_page(live_chat_id: str, next_chat_page: str):
     """Updates the `next_chat_page` for an active stream of a given session.
 
     This function updates the `next_chat_page` column in the `YT_STREAMS` table
-    for the active stream associated with the provided `session_id`. A stream is
+    for the active stream associated with the provided `live_chat_id`. A stream is
     considered active if its `is_active` flag is set to `StateEnum.YES.value`.
 
     Args:
-        session_id: The unique identifier of the session.
+        live_chat_id: The unique identifier of the sessionstream.
         next_chat_page: The new value for the `next_chat_page` column.
 
     Raises:
@@ -288,7 +314,7 @@ async def update_next_chat_page(session_id: str, next_chat_page: str):
     """
     try:
         SUPABASE_CLIENT.table(YT_STREAMS).update({"next_chat_page": next_chat_page}).eq(
-            "session_id", session_id
+            "live_chat_id", live_chat_id
         ).eq("is_active", StateEnum.YES.value).execute()
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
@@ -316,9 +342,10 @@ async def store_buzz(buzz: StreamBuzzModel):
             {
                 "buzz_type": buzz.buzz_type,
                 "session_id": buzz.session_id,
-                "chat": buzz.original_chat,
+                "original_chat": buzz.original_chat,
                 "author": f"@{buzz.author}",
-                "is_read": 0,
+                "generated_response": buzz.generated_response,
+                "buzz_status": BuzzStatusEnum.FOUND.value,
             }
         ).execute()
     except Exception as e:
@@ -508,7 +535,7 @@ async def update_buzz_status_batch_by_id(id_list: list[int], buzz_status: int):
         )
 
 
-def update_buzz_response_by_id(id: int, generated_response: str):
+async def update_buzz_response_by_id(id: int, generated_response: str):
     """Updates the response of a specific buzz event by its ID.
 
     This function updates the `buzz_status` to `BuzzStatusEnum.ACTIVE.value` and
@@ -566,7 +593,7 @@ async def store_reply(reply: WriteChatModel):
         raise HTTPException(status_code=500, detail=f"Failed to store_reply: {str(e)}")
 
 
-def get_unwritten_replies() -> list[Dict[str, Any]]:
+async def get_unwritten_replies() -> list[Dict[str, Any]]:
     """Retrieves unwritten chat replies from the `YT_REPLY` table.
 
     This function queries the `YT_REPLY` table to retrieve all rows where the
@@ -584,7 +611,7 @@ def get_unwritten_replies() -> list[Dict[str, Any]]:
     try:
         response = (
             SUPABASE_CLIENT.table(YT_REPLY)
-            .select("*")
+            .select("session_id, live_chat_id, reply")
             .eq("is_written", StateEnum.NO.value)
             .lt("retry_count", MODEL_RETRIES)
             .execute()
@@ -597,15 +624,15 @@ def get_unwritten_replies() -> list[Dict[str, Any]]:
         )
 
 
-async def mark_replies_pending(session_id: str):
+async def mark_replies_pending(live_chat_id: str):
     """Marks unwritten replies as pending for a given session.
 
     This function updates the `is_written` flag to `StateEnum.PENDING.value` for
-    all rows in the `YT_REPLY` table that match the provided `session_id` and
+    all rows in the `YT_REPLY` table that match the provided `live_chat_id` and
     have an `is_written` flag set to `StateEnum.NO.value`.
 
     Args:
-        session_id: The unique identifier of the session.
+        live_chat_id: The unique identifier of the session.
 
     Raises:
         HTTPException: If an error occurs during the database update, with a 500
@@ -614,7 +641,7 @@ async def mark_replies_pending(session_id: str):
     try:
         SUPABASE_CLIENT.table(YT_REPLY).update(
             {"is_written": StateEnum.PENDING.value}
-        ).eq("session_id", session_id).eq("is_written", StateEnum.NO.value).execute()
+        ).eq("live_chat_id", live_chat_id).eq("is_written", StateEnum.NO.value).execute()
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
         raise HTTPException(
@@ -622,15 +649,15 @@ async def mark_replies_pending(session_id: str):
         )
 
 
-async def mark_replies_success(session_id: str):
+async def mark_replies_success(live_chat_id: str):
     """Marks pending replies as successfully written for a given session.
 
     This function updates the `is_written` flag to `StateEnum.YES.value` for all
-    rows in the `YT_REPLY` table that match the provided `session_id` and have an
+    rows in the `YT_REPLY` table that match the provided `live_chat_id` and have an
     `is_written` flag set to `StateEnum.PENDING.value`.
 
     Args:
-        session_id: The unique identifier of the session.
+        live_chat_id: The unique identifier of the session.
 
     Raises:
         HTTPException: If an error occurs during the database update, with a 500
@@ -638,7 +665,7 @@ async def mark_replies_success(session_id: str):
     """
     try:
         SUPABASE_CLIENT.table(YT_REPLY).update({"is_written": StateEnum.YES.value}).eq(
-            "session_id", session_id
+            "live_chat_id", live_chat_id
         ).eq("is_written", StateEnum.PENDING.value).execute()
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
@@ -647,16 +674,16 @@ async def mark_replies_success(session_id: str):
         )
 
 
-async def mark_replies_failed(session_id: str):
+async def mark_replies_failed(live_chat_id: str):
     """Marks pending replies as failed and increments the retry count for a given session.
 
     This function updates the `is_written` flag to `StateEnum.NO.value` and
     increments the `retry_count` by 1 for all rows in the `YT_REPLY` table that
-    match the provided `session_id` and have an `is_written` flag set to
+    match the provided `live_chat_id` and have an `is_written` flag set to
     `StateEnum.PENDING.value`.
 
     Args:
-        session_id: The unique identifier of the session.
+        live_chat_id: The unique identifier of the session.
 
     Raises:
         HTTPException: If an error occurs during the database update, with a 500
@@ -665,7 +692,7 @@ async def mark_replies_failed(session_id: str):
     try:
         SUPABASE_CLIENT.table(YT_REPLY).update(
             {"is_written": StateEnum.NO.value, "retry_count": {"increment": 1}}
-        ).eq("session_id", session_id).eq(
+        ).eq("live_chat_id", live_chat_id).eq(
             "is_written", StateEnum.PENDING.value
         ).execute()
     except Exception as e:

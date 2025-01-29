@@ -91,13 +91,16 @@ async def start_stream(ctx: RunContext[str], url: str) -> Dict[str, Any]:
         title, and thumbnail URL.
 
     Raises:
-        UserError: If the provided URL is invalid or if there is an issue
-          retrieving metadata from the YouTube API.
+        UserError: If the provided URL is invalid, if the stream is not live,
+          or if there is an issue retrieving metadata from the YouTube API.
         Exception: If any other unexpected error occurs during the process.
     """
+    session_id = ctx.deps
     try:
         video_id = await validate_and_extract_youtube_id(url=url)
-        video_metadata = await get_stream_metadata(video_id=video_id)
+        video_metadata = await get_stream_metadata(
+            video_id=video_id, session_id=session_id
+        )
         metadata_items = video_metadata.get("items")
 
         if not metadata_items:
@@ -109,7 +112,6 @@ async def start_stream(ctx: RunContext[str], url: str) -> Dict[str, Any]:
         stream_metadata = populate_metadata_class(snippet)
 
         # Update flag for session_id
-        session_id = ctx.deps
         await deactivate_session(session_id)
 
         # Store metadata in DB

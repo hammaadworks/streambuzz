@@ -37,8 +37,8 @@ async def lifespan(_: FastAPI):
         _: The FastAPI application instance (unused).
 
     Yields:
-        None. The context manager yields control back to FastAPI after starting the scheduler
-        and when the application is shutting down.
+        None: The context manager yields control back to FastAPI after starting the scheduler
+            and when the application is shutting down.
     """
     # Prevent duplicate jobs if app restarts
     if not scheduler.get_job("read_live_chats"):
@@ -69,7 +69,7 @@ async def lifespan(_: FastAPI):
     print("Scheduler shut down...")
 
 
-# ✅ Create FastAPI app and pass the lifespan function
+# Create FastAPI app and pass the lifespan function
 app = FastAPI(lifespan=lifespan)
 app.include_router(chat_worker.router)
 security = HTTPBearer()
@@ -98,10 +98,10 @@ def verify_token(
         credentials: The authentication credentials extracted from the request header.
 
     Returns:
-        True if the token is valid.
+        bool: True if the token is valid.
 
     Raises:
-         HTTPException:
+        HTTPException:
             - 500: If the `API_BEARER_TOKEN` environment variable is not set.
             - 401: If the provided token does not match the expected token.
     """

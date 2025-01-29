@@ -2,6 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 
+from constants.enums import BuzzStatusEnum
+
 
 class StreamMetadata(BaseModel):
     """
@@ -64,7 +66,7 @@ class StreamBuzzModel(BuzzModel):
     session_id: str
     original_chat: str
     author: str
-    buzz_status: Optional[int] = 0
+    buzz_status: Optional[int] = BuzzStatusEnum.FOUND.value
 
 
 class StreamBuzzDisplay(BaseModel):

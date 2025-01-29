@@ -22,28 +22,34 @@ responder_agent = Agent(
 
 
 @responder_agent.tool
-async def respond(ctx: RunContext[str], user_query: str) -> str:
+async def respond(ctx: RunContext[str], user_query: str) -> str|None:
     """Responds to a user query using Retrieval Augmented Generation (RAG).
 
-    This tool first checks if a knowledge base exists for the given session ID.
-    If a knowledge base is found, it retrieves relevant document chunks based on
-    the user's query using embeddings. The retrieved chunks are then formatted and
-    returned. If no knowledge base is found or no relevant chunks are retrieved,
-    the function returns None, signaling the agent to fall back to the LLM.
+    This tool leverages a knowledge base stored in Supabase to provide contextually
+    relevant answers to user queries. It first checks if a knowledge base exists for
+    the given session ID. If found, it retrieves relevant document chunks by
+    embedding the user query and comparing it to pre-computed embeddings of the
+    document chunks. The retrieved chunks are then formatted and returned as a
+    single string. If no knowledge base is found, or if no relevant chunks are
+    retrieved, the function returns None, signaling the agent to fall back to
+    the LLM for a response.
 
     Args:
-        ctx: The context of the current run, including the session ID as `ctx.deps`.
+        ctx: The context of the current agent run. This includes dependencies
+            passed to the agent, such as the session ID, accessible via `ctx.deps`.
         user_query: The user's question or query string.
 
     Returns:
         A string containing formatted document chunks relevant to the user query,
         or None if no relevant information is found or an error occurs. The chunks
         are formatted with a header containing the document title, followed by the
-        document content, with a separator between chunks.
+        document content, with a separator ("\\n---\\n") between chunks. If an error
+        occurs during retrieval, a string containing the error message is returned.
 
     Raises:
-        Exception: If an error occurs during the retrieval process. The error message
-            is logged to the console and also returned as a string.
+        Exception: If an error occurs during the retrieval process, such as issues
+            accessing the database or embedding the query. The error message is
+            logged to the console and returned as a string.
     """
     try:
         # Check if session_id has knowledge base

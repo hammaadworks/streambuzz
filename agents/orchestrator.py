@@ -34,25 +34,30 @@ async def get_response(
     human_messages: list[str],
     messages: List[ModelRequest | ModelResponse],
 ) -> str:
-    """
-    Orchestrates the response generation process based on the user's intent.
+    """Orchestrates the response generation process based on the user's intent.
 
-    This function takes a user request, a list of human messages, and a list of model messages
-    and determines the appropriate agent to handle the request based on the identified intent.
-    It performs RAG operations if files are provided, classifies the streamer's intent, and
-    then calls the corresponding agent to generate a response.
+    This function acts as a central dispatcher, receiving a user request and
+    determining the appropriate agent to handle it. It first processes any
+    provided files using RAG (Retrieval Augmented Generation) if available.
+    Then, it classifies the user's intent using a dedicated utility. Based on
+    the identified intent, it calls a specific agent to generate a response.
 
     Args:
-        request: An AgentRequest object containing the user's query, session ID, and files.
-        human_messages: A list of strings representing the history of human messages in the conversation.
-        messages: A list of ModelRequest or ModelResponse objects representing the history of model messages in the conversation.
+        request: An AgentRequest object containing the user's query, session ID, and
+            any associated files.
+        human_messages: A list of strings representing the history of human
+            messages in the current conversation.
+        messages: A list of ModelRequest or ModelResponse objects representing
+            the history of model messages in the current conversation.
 
     Returns:
-        A string containing the generated response from the appropriate agent.
+        A string containing the generated response from the selected agent.
 
     Raises:
-        UserError: If a user-related error occurs during processing.
-        Exception: If any other unexpected error occurs during processing.
+        UserError: If a user-related error occurs during processing, such as
+            invalid input or a problem with user-specific data.
+        Exception: If any other unexpected error occurs during the execution of
+            this function, such as network issues or unexpected model responses.
     """
     try:
         # Make file RAG ready

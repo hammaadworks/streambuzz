@@ -7,6 +7,13 @@ class StreamerIntentEnum(Enum):
 
     This enum defines the possible actions a streamer might want to perform,
     such as starting a stream, checking the current buzz, or replying to a post.
+
+    Attributes:
+        START_STREAM: Indicates the streamer intends to start a new stream.
+        CURRENT_BUZZ: Indicates the streamer intends to check the current buzz.
+        NEXT_BUZZ: Indicates the streamer intends to check the next buzz.
+        POST_REPLY: Indicates the streamer intends to reply to a post.
+        UNKNOWN: Indicates the streamer's intent is unknown or could not be determined.
     """
 
     START_STREAM = 0
@@ -27,6 +34,12 @@ class BuzzStatusEnum(Enum):
 
     This enum defines the various stages a buzz can be in, from being found to being
     active or inactive.
+
+    Attributes:
+        FOUND: Indicates that the buzz has been initially found.
+        PROCESSING: Indicates that the buzz is currently being processed.
+        ACTIVE: Indicates that the buzz is currently active.
+        INACTIVE: Indicates that the buzz is currently inactive.
     """
 
     FOUND = 0
@@ -45,6 +58,11 @@ class StateEnum(Enum):
 
     This enum defines states that are typically represented as a simple yes/no,
     with an option for a pending state.
+
+     Attributes:
+        NO: Indicates a negative or 'no' state.
+        YES: Indicates a positive or 'yes' state.
+        PENDING: Indicates a pending or undecided state.
     """
 
     NO = 0
@@ -61,13 +79,19 @@ class ChatIntentEnum(Enum):
 
     This enum defines the possible purposes behind a user's message in a chat,
     such as asking a question, expressing a concern, or making a request.
+
+    Attributes:
+        UNKNOWN: Indicates the user's intent is unknown or could not be determined.
+        QUESTION: Indicates the user is asking a question.
+        CONCERN: Indicates the user is expressing a concern.
+        REQUEST: Indicates the user is making a request.
     """
 
-    UNKNOWN = 0
+    UNKNOWN = "UNKNOWN"
     """Indicates the user's intent is unknown or could not be determined."""
-    QUESTION = 1
+    QUESTION = "QUESTION"
     """Indicates the user is asking a question."""
-    CONCERN = 2
+    CONCERN = "CONCERN"
     """Indicates the user is expressing a concern."""
-    REQUEST = 3
+    REQUEST = "REQUEST"
     """Indicates the user is making a request."""

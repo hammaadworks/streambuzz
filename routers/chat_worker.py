@@ -8,9 +8,9 @@ from constants.enums import BuzzStatusEnum, ChatIntentEnum
 from constants.prompts import REPLY_SUMMARISER_PROMPT
 from fastapi import APIRouter
 from models.agent_models import ProcessFoundBuzz
-from models.youtube_models import WriteChatModel
-from utils import supabase_util, youtube_util
-from utils.supabase_util import store_message
+from models.youtube_models import StreamBuzzModel, WriteChatModel
+from utils import intent_util, supabase_util, youtube_util
+from utils.supabase_util import mark_replies_success, store_message
 from utils.youtube_util import get_youtube_api_keys
 
 from ..agents.responder import responder_agent
@@ -60,6 +60,90 @@ async def process_buzz():
             raise
 
 
+async def process_chat_messages(chat_list: List[Dict[str, Any]], session_id: str):
+    """
+    Processes a list of chat messages for a given session.
+
+    This function iterates through a list of chat messages, classifies
+    the intent of each message, and if the intent is not 'UNKNOWN', stores
+    the message as a 'buzz' in the database with a 'FOUND' status.
+    If any error occurs during the processing of a chat message, it logs the
+    error along with the chat message that caused the error.
+
+    Args:
+        chat_list (List[Dict[str, Any]]): A list of dictionaries, where each
+            dictionary represents a chat message and contains at least the keys
+            'original_chat' and 'author'.
+        session_id (str): The ID of the session to which the chat messages belong.
+
+    Raises:
+        Exception: If an error occurs during the processing of a chat message,
+            the exception is caught, logged, and not re-raised.
+    """
+    for chat in chat_list:
+        try:
+            original_chat, author = chat["original_chat"], chat["author"]
+            chat_intent: ChatIntentEnum = intent_util.classify_chat_intent(
+                original_chat
+            )
+
+            if chat_intent != ChatIntentEnum.UNKNOWN:
+                await supabase_util.store_buzz(
+                    StreamBuzzModel(
+                        session_id=session_id,
+                        original_chat=original_chat,
+                        author=author,
+                        buzz_status=BuzzStatusEnum.FOUND.value,
+                        buzz_type=chat_intent.value,
+                        generated_response="",
+                    )
+                )
+        except Exception as e:
+            # Log the exception for the chat-level failure
+            print(f"Error processing chat: {chat}. Exception: {e}")
+
+
+async def process_active_streams(
+    active_streams: List[Dict[str, Any]], api_keys: Dict[str, str]
+):
+    """
+    Processes all active streams.
+
+    This function iterates through a list of active streams, fetches the latest
+    chat messages for each stream using the YouTube API, and then processes the
+    chat messages. If any error occurs during the processing of a stream,
+    it logs the error along with the stream that caused the error.
+
+    Args:
+        active_streams (List[Dict[str, Any]]): A list of dictionaries, where each
+            dictionary represents an active stream and contains at least the keys
+            'session_id', 'live_chat_id', and 'next_chat_page'.
+        api_keys (Dict[str, str]): A dictionary containing YouTube API keys.
+
+    Raises:
+        Exception: If an error occurs during the processing of a stream,
+            the exception is caught, logged, and not re-raised.
+    """
+    for stream in active_streams:
+        try:
+            session_id, live_chat_id, next_chat_page = (
+                stream["session_id"],
+                stream["live_chat_id"],
+                stream["next_chat_page"],
+            )
+            chat_list = await youtube_util.get_live_chat_messages(
+                session_id, live_chat_id, next_chat_page, api_keys
+            )
+            if not chat_list:
+                return
+
+            await process_chat_messages(chat_list, session_id)
+
+        except Exception as e:
+            # Log the exception for the stream-level failure
+            print(f"Error processing stream: {stream}. Exception: {e}")
+
+
 async def read_live_chats():
     """
     Reads and processes live chat messages from active YouTube streams.
@@ -72,7 +156,12 @@ async def read_live_chats():
     are no longer active. Finally, it calls `process_buzz` to generate
     responses for the newly created buzzes.
     """
-    pass
+    # Get active stream sessions
+    api_keys = await get_youtube_api_keys()
+    active_streams = await supabase_util.get_active_streams()
+    if active_streams:
+        await process_active_streams(active_streams, api_keys)
+    await process_buzz()
 
 
 async def group_chats_by_session_id(
@@ -104,31 +193,27 @@ async def group_chats_by_session_id(
         # Prepare the desired output
         grouped_chats = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
-        # Group chats by session_id, live_chat_id, and retry_count
+        # Group chats by session_id, live_chat_id
         for row in unwritten_chats:
-            grouped_chats[row["session_id"]][row["live_chat_id"]][
-                row["retry_count"]
-            ].append(row["reply"])
+            grouped_chats[row["session_id"]][row["live_chat_id"]].append(row["reply"])
 
         # Populate WriteChatModel instances
         result: List[WriteChatModel] = []
         for session_id, live_chat_groups in grouped_chats.items():
-            for live_chat_id, retry_groups in live_chat_groups.items():
-                for retry_count, chats in retry_groups.items():
-                    raw_reply = ". ".join(chats)
-                    reply_summary = await orchestrator_agent.run(
-                        user_prompt=f"{REPLY_SUMMARISER_PROMPT}\n{raw_reply}",
-                        result_type=str,
+            for live_chat_id, replies in live_chat_groups.items():
+                raw_reply = ". ".join(replies)
+                reply_summary = await orchestrator_agent.run(
+                    user_prompt=f"{REPLY_SUMMARISER_PROMPT}\n{raw_reply}",
+                    result_type=str,
+                )
+                result.append(
+                    WriteChatModel(
+                        session_id=session_id,
+                        live_chat_id=live_chat_id,
+                        reply=raw_reply,
+                        reply_summary=reply_summary
                     )
-                    result.append(
-                        WriteChatModel(
-                            session_id=session_id,
-                            live_chat_id=live_chat_id,
-                            retry_count=retry_count,
-                            reply=raw_reply,
-                            reply_summary=reply_summary,
-                        )
-                    )
+                )
         return result
     except Exception as e:
         print(f"Error>> group_chats_by_session_id: {str(e)}")
@@ -154,13 +239,16 @@ async def write_live_chats():
     """
     try:
         # Get unwritten chats from YT_REPLY table
-        unwritten_chats_query_response = await supabase_util.get_unwritten_chats()
-        # unwritten_chats_query_response = []
+        unwritten_chats_query_response = await supabase_util.get_unwritten_replies()
         if not unwritten_chats_query_response:
             return
         grouped_chats: List[WriteChatModel] = await group_chats_by_session_id(
             unwritten_chats_query_response
         )
+        
+        # Update status of those live_chat_id to PENDING
+        for reply in grouped_chats:
+            await supabase_util.mark_replies_pending(reply.live_chat_id)
 
         # Call insert YouTube api on max retries in loop for each of the sessions
         for reply in grouped_chats:
@@ -181,24 +269,19 @@ async def write_live_chats():
                     url=YOUTUBE_LIVE_API_ENDPOINT,
                     params=params,
                     payload=payload,
-                    api_keys=get_youtube_api_keys(),
+                    api_keys=await get_youtube_api_keys(),
                 )
-                # await mark_existing_buzz_written(reply.session_id)
+                await supabase_util.mark_replies_success(reply.live_chat_id)
                 await store_message(
                     session_id=reply.session_id,
                     message_type="ai",
-                    content=f"StreamBuzz Bot: I've replied this on"
-                    f" live chat\n{reply.reply_summary}",
+                    content=f"StreamBuzz Bot: Hey there! I have just dropped a reply in the live chat:\n{reply.reply_summary}\n— check it out!",
                     data={"reply_dump": reply.model_dump()},
                 )
             except Exception as e:
-                print(f"Error>> write_live_chats: {reply.session_id}\n{str(e)}")
+                print(f"Error>> write_live_chats: {str(reply)}\n{str(e)}")
+                await supabase_util.mark_replies_failed(reply.live_chat_id)
                 raise
-        # if success = update status to written session_id and live_chat_id. Respond
-        # that replies have been posted to the DB messages
-        # if stream_inactive = deactivate
-        # if failed = get retry count; if retry count = 3: deactivate or retry count
-        # = +1
     except Exception as e:
         print(f"Error>> write_live_chats: {str(e)}")
         raise
