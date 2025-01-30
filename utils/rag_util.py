@@ -2,28 +2,31 @@ import asyncio
 import base64
 import json
 import os
+import re
 from typing import Any, Dict, List, Tuple
 
 import google.generativeai as genai
 from dotenv import load_dotenv
 
+from agents.buzz_intern import buzz_intern_agent
 from constants.constants import (ACCEPTED_FILE_EXTENSION, ACCEPTED_FILE_MIME,
                                  ACCEPTED_FILE_QUANTITY, CHUNK_SIZE,
                                  EMBEDDING_DIMENSIONS, EMBEDDING_MODEL_NAME,
-                                 MAX_FILE_SIZE_B, MAX_FILE_SIZE_MB, OPEN_ROUTER_CLIENT,
-                                 OPEN_ROUTER_MODEL_NAME, SUMMARY, TITLE)
+                                 MAX_FILE_SIZE_B, MAX_FILE_SIZE_MB, SUMMARY, TITLE)
 from constants.prompts import TITLE_SUMMARY_PROMPT
 from exceptions.user_error import UserError
+from logger import log_method
 from models.agent_models import AgentRequest, ProcessedChunk
 from utils import supabase_util
 
 load_dotenv()
 
 
+@log_method
 async def get_title_and_summary(chunk: str) -> dict:
-    """Extracts the title and summary from a text chunk using an orchestrator agent.
+    """Extracts the title and summary from a text chunk using a buzz_intern_agent.
 
-    This function uses an orchestrator agent to process the input chunk and extract
+    This function uses buzz_intern_agent to process the input chunk and extract
     the title and summary. It uses the `TITLE_SUMMARY_PROMPT` to guide the agent.
 
     Args:
@@ -39,17 +42,19 @@ async def get_title_and_summary(chunk: str) -> dict:
         the console, and default error messages are returned.
     """
     try:
-        completions = OPEN_ROUTER_CLIENT.chat.completions.create(
-            model=OPEN_ROUTER_MODEL_NAME,
-            messages=[
-                {"role": "system", "content": TITLE_SUMMARY_PROMPT},
-                {"role": "user", "content": f"{chunk[:500]}"}
-            ],
-            response_format={"type": "json_object"}
+        completions = await buzz_intern_agent.run(
+            user_prompt=f"{TITLE_SUMMARY_PROMPT}\n{chunk[:500]}",
+            result_type=dict
         )
-        response: dict = json.loads(completions.choices[0].message.content)
+        response_text = completions.data
+        if response_text.startswith("```json"):
+            response_text = re.sub(
+                r"```json\s(.*?)\s*```", r"\1", response_text, flags=re.DOTALL
+            )
+        response: dict = json.loads(response_text)
         response[TITLE] = response.get(TITLE, "Error processing title")
         response[SUMMARY] = response.get(SUMMARY, "Error processing summary")
+        return response
     except Exception as e:
         print(f"Error getting title and summary: {e}")
         return {
@@ -57,6 +62,8 @@ async def get_title_and_summary(chunk: str) -> dict:
             SUMMARY: "Error processing summary",
         }
 
+
+@log_method
 async def validate_file(files: List[Dict[str, Any]]) -> str:
     """Validates the uploaded file(s) against size, type, and quantity constraints.
 
@@ -100,6 +107,7 @@ async def validate_file(files: List[Dict[str, Any]]) -> str:
     return base64_content
 
 
+@log_method
 async def get_file_contents(files: List[Dict[str, Any]]) -> Tuple[str, str]:
     """Retrieves and decodes the content of a file from its base64 representation.
 
@@ -132,6 +140,7 @@ async def get_file_contents(files: List[Dict[str, Any]]) -> Tuple[str, str]:
     return files[0]["name"], file_content
 
 
+@log_method
 async def get_embedding(text: str) -> List[float]:
     """Generates an embedding vector for a given text using the Gemini model.
 
@@ -158,6 +167,7 @@ async def get_embedding(text: str) -> List[float]:
         return [0] * EMBEDDING_DIMENSIONS  # Return zero vector on error
 
 
+@log_method
 async def process_chunk(
     chunk_number: int, session_id: str, file_name: str, chunk: str
 ) -> ProcessedChunk:
@@ -194,6 +204,7 @@ async def process_chunk(
     )
 
 
+@log_method
 async def chunk_text(text: str, chunk_size: int = CHUNK_SIZE) -> List[str]:
     """Splits a text into chunks, respecting code blocks, paragraphs, and sentences.
 
@@ -258,6 +269,7 @@ async def chunk_text(text: str, chunk_size: int = CHUNK_SIZE) -> List[str]:
     return chunks
 
 
+@log_method
 async def process_and_store_document(
     session_id: str, file_name: str, file_content: str
 ):
@@ -288,6 +300,7 @@ async def process_and_store_document(
     await asyncio.gather(*insert_tasks)
 
 
+@log_method
 async def create_knowledge_base(request: AgentRequest) -> None:
     """Creates a knowledge base from a user-uploaded document.
 

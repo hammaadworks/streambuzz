@@ -1,15 +1,17 @@
 import os
 from contextlib import asynccontextmanager
 
-from agents import orchestrator
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from constants.constants import (CHAT_READ_INTERVAL, CHAT_WRITE_INTERVAL,
-                                 CONVERSATION_CONTEXT)
 from dotenv import load_dotenv
-from exceptions.user_error import UserError
 from fastapi import Depends, FastAPI, HTTPException, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from agents import orchestrator
+from agents.buzz_intern import buzz_intern_agent
+from constants.constants import (CHAT_READ_INTERVAL, CHAT_WRITE_INTERVAL,
+                                 CONVERSATION_CONTEXT)
+from exceptions.user_error import UserError
 from models.agent_models import AgentRequest, AgentResponse
 from routers import chat_worker
 from routers.chat_worker import read_live_chats, write_live_chats
@@ -134,21 +136,28 @@ async def sample_supabase_agent(
     """
     Processes a user's request using a conversational agent, interacting with Supabase.
 
-    This endpoint receives a user's query, retrieves relevant conversation history from Supabase,
-    sends the query to the agent orchestrator, stores the user's query and the agent's response
-    in Supabase, and returns a success indicator. It also handles potential `UserError` exceptions
-    by generating a polite error message using the orchestrator and stores that in Supabase.
+    This endpoint receives a user's query, retrieves relevant conversation history
+    from Supabase,
+    sends the query to the buzz_intern_agent, stores the user's query and the agent's
+    response
+    in Supabase, and returns a success indicator. It also handles potential
+    `UserError` exceptions
+    by generating a polite error message using the buzz_intern_agent and stores that
+    in Supabase.
     General exceptions are caught and an error message is stored in Supabase.
 
     Args:
-        request: The user's request, including the query, session ID, request ID, and files.
-        authenticated: A boolean indicating if the user is authenticated, derived from the `verify_token` dependency.
+        request: The user's request, including the query, session ID, request ID,
+        and files.
+        authenticated: A boolean indicating if the user is authenticated, derived
+        from the `verify_token` dependency.
 
     Returns:
         AgentResponse: An object indicating the success or failure of the request.
 
     Raises:
-        HTTPException: If an error occurs during the agent interaction or database operations.
+        HTTPException: If an error occurs during the agent interaction or database
+        operations.
     """
     try:
         # Fetch conversation history from the DB
@@ -188,7 +197,7 @@ async def sample_supabase_agent(
     except UserError as ue:
         user_error_string = str(ue)
         print(f"Error>> get_response: {user_error_string}")
-        exception_response = await orchestrator.orchestrator_agent.run(
+        exception_response = await buzz_intern_agent.run(
             user_prompt=f"Respond with a short polite message within 100 words to "
                         f"convey the following error.\n{user_error_string}. You can "
                         f"use emojis sparingly to express yourself.",

@@ -76,7 +76,7 @@ Alternatively, build an image from the `Dockerfile` and save yourself the setup 
 
 ### **Configuration**
 
-1. Fill in your keys as specified in the `.env.example` file.
+1. Fill in your keys as specified in the `.env.example` file. Use your model of choice by changing variables in `constants.py` under model section.
 2. Create database tables using the DDL commands provided in `queries.sql` file. This project uses Supabase. You can store your YouTube API keys in the `youtube_keys` table.
 
     *Note: Hackathon organisers kindly contact [me](mailto:hammaadworks@gmail.com) for Supabase domain and anon key or kindly share those, I'll add the YouTube keys*

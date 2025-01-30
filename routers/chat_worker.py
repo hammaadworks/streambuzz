@@ -5,11 +5,12 @@ from typing import Any, Dict, List
 
 from fastapi import APIRouter
 
-from agents.orchestrator import orchestrator_agent
+from agents.buzz_intern import buzz_intern_agent
 from agents.responder import responder_agent
 from constants.constants import YOUTUBE_LIVE_API_ENDPOINT
 from constants.enums import BuzzStatusEnum, ChatIntentEnum
 from constants.prompts import REPLY_SUMMARISER_PROMPT
+from logger import log_method
 from models.agent_models import ProcessFoundBuzz
 from models.youtube_models import StreamBuzzModel, WriteChatModel
 from utils import intent_util, supabase_util, youtube_util
@@ -20,6 +21,7 @@ from utils.youtube_util import get_youtube_api_keys
 router = APIRouter()
 
 
+@log_method
 async def process_buzz():
     """
     Processes buzzes that are in the 'FOUND' state.
@@ -57,7 +59,8 @@ async def process_buzz():
                 buzz_message = {"buzz_type": buzz.buzz_type, "original_chat":
                     buzz.original_chat, "author": buzz.author, "generated_response":
                     response.data}
-                buzz_message_display = await orchestrator_agent.run(f"""
+                buzz_message_display = await buzz_intern_agent.run(
+                    f"""
                 1. Extract: `buzz_type`, `original_chat`, `author`, 
                 `generated_response` from the given json
                 2. Format and return the data in a readable, concise manner. Use 
@@ -69,13 +72,13 @@ async def process_buzz():
                 )
 
             await supabase_util.update_buzz_response_by_id(
-                id=buzz.id, generated_response=response.data
+                buzz_id=buzz.id, generated_response=response.data
             )
 
         except Exception as e:
             print(f"Error>> process_buzz: {str(e)}")
             await supabase_util.update_buzz_status_by_id(
-                id=buzz.id, buzz_status=BuzzStatusEnum.FOUND.value
+                buzz_id=buzz.id, buzz_status=BuzzStatusEnum.FOUND.value
             )
             raise
 
@@ -119,6 +122,9 @@ def filter_chat_message(chat: str) -> str:
 
     # If message passes the filters, return it as is
     return chat
+
+
+@log_method
 async def process_chat_messages(chat_list: List[Dict[str, Any]], session_id: str):
     """
     Processes a list of chat messages for a given session.
@@ -163,6 +169,7 @@ async def process_chat_messages(chat_list: List[Dict[str, Any]], session_id: str
             print(f"Error processing chat: {chat}. Exception: {e}")
 
 
+@log_method
 async def process_active_streams(
     active_streams: List[Dict[str, Any]], api_keys: Dict[str, str]
 ):
@@ -204,6 +211,7 @@ async def process_active_streams(
             print(f"Error processing stream: {stream}. Exception: {e}")
 
 
+@log_method
 async def read_live_chats():
     """
     Reads and processes live chat messages from active YouTube streams.
@@ -224,6 +232,7 @@ async def read_live_chats():
     await process_buzz()
 
 
+@log_method
 async def group_chats_by_session_id(
     unwritten_chats: List[Dict[str, Any]],
 ) -> List[WriteChatModel]:
@@ -232,7 +241,7 @@ async def group_chats_by_session_id(
 
     This function takes a list of unwritten chat messages and groups them
     based on their session ID and live chat ID. It then summarizes the grouped
-    messages using an orchestrator agent and creates `WriteChatModel`
+    messages using buzz_intern_agent and creates `WriteChatModel`
     instances for each group. The `WriteChatModel` instances contain the
     original concatenated replies and the summarized reply.
 
@@ -262,7 +271,7 @@ async def group_chats_by_session_id(
         for session_id, live_chat_groups in grouped_chats.items():
             for live_chat_id, replies in live_chat_groups.items():
                 raw_reply = ". ".join(replies)
-                reply_summary = await orchestrator_agent.run(
+                reply_summary = await buzz_intern_agent.run(
                     user_prompt=f"{REPLY_SUMMARISER_PROMPT}\n{raw_reply}",
                     result_type=str,
                 )
@@ -280,6 +289,7 @@ async def group_chats_by_session_id(
         raise
 
 
+@log_method
 async def write_live_chats():
     """
     Writes summarized chat replies to YouTube live chats.

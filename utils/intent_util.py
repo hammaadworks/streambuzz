@@ -2,10 +2,12 @@ import re
 from typing import List
 
 import torch
+from sentence_transformers import util
+
 from constants.constants import (CHAT_INTENT_EXAMPLES, CONFIDENCE_THRESHOLD, NLP_MODEL,
                                  STREAMER_INTENT_EXAMPLES, YOUTUBE_URL_REGEX)
 from constants.enums import ChatIntentEnum, StreamerIntentEnum
-from sentence_transformers import util
+from logger import log_method
 
 # Compute embeddings for streamer buzz_type examples
 streamer_intent_embeddings = {}
@@ -45,6 +47,7 @@ def contains_valid_youtube_url(user_query: str) -> bool:
     return re.search(YOUTUBE_URL_REGEX, user_query) is not None
 
 
+@log_method
 async def classify_streamer_intent(
     messages: List[str], query: str
 ) -> StreamerIntentEnum:
@@ -97,6 +100,7 @@ async def classify_streamer_intent(
         return StreamerIntentEnum.UNKNOWN
 
 
+@log_method
 async def classify_chat_intent(chat: str) -> ChatIntentEnum:
     """Classifies the intent of a chat message.
 

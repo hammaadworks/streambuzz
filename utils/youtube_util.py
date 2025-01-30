@@ -10,6 +10,7 @@ from constants.constants import (ALLOWED_DOMAINS, YOUTUBE_API_ENDPOINT,
                                  YOUTUBE_LIVE_API_ENDPOINT)
 from constants.enums import BuzzStatusEnum
 from exceptions.user_error import UserError
+from logger import log_method
 from utils import supabase_util
 
 
@@ -31,6 +32,7 @@ def get_youtube_api_keys():
     return supabase_util.get_youtube_api_keys()
 
 
+@log_method
 async def validate_and_extract_youtube_id(url: str) -> str:
     """
     Validates a YouTube URL and extracts the video ID if the URL is valid.
@@ -95,6 +97,7 @@ async def validate_and_extract_youtube_id(url: str) -> str:
         raise
 
 
+@log_method
 async def get_stream_metadata(video_id: str, session_id: str) -> dict:
     """
     Retrieves stream metadata for a given YouTube video ID using the YouTube API.
@@ -133,6 +136,7 @@ async def get_stream_metadata(video_id: str, session_id: str) -> dict:
         raise
 
 
+@log_method
 async def post_request_with_retries(
     url: str, params: dict, payload: dict, api_keys: list, use_keys: bool = False
 ) -> dict:
@@ -197,6 +201,7 @@ async def post_request_with_retries(
     raise HTTPError("All API keys failed or maximum retries reached.")
 
 
+@log_method
 async def get_request_with_retries(
     url: str, params: dict, api_keys: list, session_id: str, use_keys: bool = True
 ) -> dict:
@@ -275,6 +280,7 @@ async def get_request_with_retries(
     raise HTTPError("All API keys failed, maximum retries reached or bad request.")
 
 
+@log_method
 async def deactivate_stream(session_id: str, message: str = None) -> None:
     """
     Deactivates all streams and marks all replies as inactive for a given session.
@@ -308,6 +314,7 @@ async def deactivate_stream(session_id: str, message: str = None) -> None:
         raise
 
 
+@log_method
 async def deactivate_session(session_id: str) -> None:
     """Deactivates all streams and marks all buzz as inactive for a given session.
 
@@ -333,6 +340,7 @@ async def deactivate_session(session_id: str) -> None:
         raise
 
 
+@log_method
 async def get_live_chat_messages(
     session_id: str, live_chat_id: str, next_chat_page: str, api_keys: list
 ) -> list:

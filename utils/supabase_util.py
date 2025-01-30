@@ -465,14 +465,14 @@ async def get_found_buzz() -> list[Dict[str, Any]]:
         )
 
 
-async def update_buzz_status_by_id(id: int, buzz_status: str):
+async def update_buzz_status_by_id(buzz_id: int, buzz_status: str):
     """Updates the status of a specific buzz event by its ID.
 
     This function updates the `buzz_status` column in the `YT_BUZZ` table for the
     row that matches the provided `id`.
 
     Args:
-        id: The unique identifier of the buzz event to update.
+        buzz_id: The unique identifier of the buzz event to update.
         buzz_status: The new status to set for the buzz event.
 
     Raises:
@@ -481,7 +481,7 @@ async def update_buzz_status_by_id(id: int, buzz_status: str):
     """
     try:
         SUPABASE_CLIENT.table(YT_BUZZ).update({"buzz_status": buzz_status}).eq(
-            "id", id
+            "id", buzz_id
         ).execute()
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
@@ -540,7 +540,7 @@ async def update_buzz_status_batch_by_id(id_list: list[int], buzz_status: int):
         )
 
 
-async def update_buzz_response_by_id(id: int, generated_response: str):
+async def update_buzz_response_by_id(buzz_id: int, generated_response: str):
     """Updates the response of a specific buzz event by its ID.
 
     This function updates the `buzz_status` to `BuzzStatusEnum.ACTIVE.value` and
@@ -548,7 +548,7 @@ async def update_buzz_response_by_id(id: int, generated_response: str):
     matches the provided `id`.
 
     Args:
-        id: The unique identifier of the buzz event to update.
+        buzz_id: The unique identifier of the buzz event to update.
         generated_response: The new generated response to set for the buzz event.
 
     Raises:
@@ -561,7 +561,7 @@ async def update_buzz_response_by_id(id: int, generated_response: str):
                 "buzz_status": BuzzStatusEnum.ACTIVE.value,
                 "generated_response": generated_response,
             }
-        ).eq("id", id).execute()
+        ).eq("id", buzz_id).execute()
     except Exception as e:
         print(f"Error>> Failed at supabase_util: {str(e)}")
         raise HTTPException(

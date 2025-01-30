@@ -242,7 +242,7 @@ OPEN_ROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
     This string defines the base URL used to make API requests to Open Router.
 """
-OPEN_ROUTER_MODEL_NAME = "gemini-2.0-flash-exp"
+OPEN_ROUTER_MODEL_NAME = "google/gemini-2.0-flash-thinking-exp:free"
 """Name of the Open Router model.
 
     This string specifies the name of the model to be used from the Open Router API.
