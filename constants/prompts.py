@@ -4,6 +4,11 @@ Respond directly to queries with no extra context or explanations.
 Follow word limits if specified. Only return the final response.
 """
 
+CHAT_ANALYSER_PROMPT = """
+Classify as: Question, Concern, Request, or Unknown. Smalltalk and hate speech are 
+Unknown. Reply with the category only.
+Chat: 
+"""
 
 TITLE_SUMMARY_PROMPT = """
 Extract the title and summary from the given text chunk:

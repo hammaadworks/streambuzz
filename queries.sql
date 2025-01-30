@@ -59,7 +59,7 @@ begin
     content,
     1 - (streamer_knowledge.embedding <=> query_embedding) as similarity
   from streamer_knowledge
-  where user_session_id = session_id and similarity > 0.7
+  where user_session_id = session_id
   order by streamer_knowledge.embedding <=> query_embedding
   limit match_count;
 end;

@@ -9,11 +9,11 @@ from agents.buzz_intern import buzz_intern_agent
 from agents.responder import responder_agent
 from constants.constants import YOUTUBE_LIVE_API_ENDPOINT
 from constants.enums import BuzzStatusEnum, ChatIntentEnum
-from constants.prompts import REPLY_SUMMARISER_PROMPT
+from constants.prompts import CHAT_ANALYSER_PROMPT, REPLY_SUMMARISER_PROMPT
 from logger import log_method
 from models.agent_models import ProcessFoundBuzz
 from models.youtube_models import StreamBuzzModel, WriteChatModel
-from utils import intent_util, supabase_util, youtube_util
+from utils import supabase_util, youtube_util
 from utils.supabase_util import store_message
 from utils.youtube_util import get_youtube_api_keys
 
@@ -149,11 +149,11 @@ async def process_chat_messages(chat_list: List[Dict[str, Any]], session_id: str
         try:
             original_chat, author = chat["original_chat"], chat["author"]
             if filter_chat_message(original_chat):
-                chat_intent: ChatIntentEnum = await intent_util.classify_chat_intent(
-                    original_chat
+                chat_intent = await buzz_intern_agent.run(
+                    user_prompt=f"{CHAT_ANALYSER_PROMPT}{original_chat}"
                 )
 
-                if chat_intent != ChatIntentEnum.UNKNOWN:
+                if ChatIntentEnum.UNKNOWN.value not in chat_intent.data.strip().upper():
                     await supabase_util.store_buzz(
                         StreamBuzzModel(
                             session_id=session_id,

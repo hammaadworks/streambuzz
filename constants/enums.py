@@ -10,19 +10,19 @@ class StreamerIntentEnum(Enum):
 
     Attributes:
         START_STREAM: Indicates the streamer intends to start a new stream.
-        GET_CURRENT: Indicates the streamer intends to check the current buzz.
-        GET_NEXT: Indicates the streamer intends to check the next buzz.
-        REPLY: Indicates the streamer intends to reply to a post.
+        GET_CURRENT_CHAT: Indicates the streamer intends to check the current buzz.
+        GET_NEXT_CHAT: Indicates the streamer intends to check the next buzz.
+        REPLY_CHAT: Indicates the streamer intends to reply to a post.
         UNKNOWN: Indicates the streamer's intent is unknown or could not be determined.
     """
 
     START_STREAM = 0
     """Indicates the streamer intends to start a new stream."""
-    GET_CURRENT = 1
+    GET_CURRENT_CHAT = 1
     """Indicates the streamer intends to check the current buzz."""
-    GET_NEXT = 2
+    GET_NEXT_CHAT = 2
     """Indicates the streamer intends to check the next buzz."""
-    REPLY = 3
+    REPLY_CHAT = 3
     """Indicates the streamer intends to reply to a post."""
     UNKNOWN = 4
     """Indicates the streamer's intent is unknown or could not be determined."""

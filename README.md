@@ -112,8 +112,6 @@ Alternatively, build an image from the `Dockerfile` and save yourself the setup 
 
 #### **Experience StreamBuzz in Action!**
 
-## **Watch StreamBuzz in Action!** 🎬  
-
 <p align="center">
   <a href="https://www.youtube.com/watch?v=YOUR_VIDEO_ID">
     <img src="https://img.youtube.com/vi/YOUR_VIDEO_ID/maxresdefault.jpg" alt="StreamBuzz Demo" width="600">
@@ -159,6 +157,36 @@ Alternatively, build an image from the `Dockerfile` and save yourself the setup 
   <img src="./media/agents.png" width="70%" alt="StreamBuzz Live Demo">
 </p>
 <p align="center"><b>A Moderator Crew of 4 Agents to your rescue!</b></p>
+
+---
+
+## Project Nuances and Future Scope
+
+### Current Limitations
+1. **OAuth Support**  
+   - Currently unavailable. Implementing OAuth support would allow replies to be posted on behalf of the streamer using their Google account.
+
+2. **One Stream per Chat Session**  
+   - Only one stream can be moderated per chat session.  
+   - If a request to moderate another stream is made, the previous stream is deactivated, and a new session is initiated.
+
+3. **Post-Stream Replies**  
+   - Replies cannot be posted after a YouTube stream ends.  
+   - However, unviewed buzz will remain accessible for review.
+
+4. **Buzz Navigation**  
+   - Navigation through previous buzz is not supported; only forward navigation is possible.
+
+5. **Single File RAG Support**  
+   - Only one text file can be uploaded per chat session.  
+   - Uploading a new file deletes the knowledge base from the previous file. Enhancements can be made to support multiple files of various formats.
+
+### Future Scope
+- **OAuth Integration**: Enable seamless posting of replies using the streamer’s Google account.
+- **Multi-Stream Moderation**: Allow moderation of multiple streams in a single session without resetting.
+- **Post-Stream Interaction**: Extend functionality to post replies even after the stream has ended.
+- **Enhanced Buzz Navigation**: Implement backward navigation for buzz messages.
+- **Multi-File Support**: Develop features to handle multiple files of various formats within a single session.
 
 ---
 

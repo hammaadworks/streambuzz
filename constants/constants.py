@@ -51,7 +51,7 @@ STREAMER_INTENT_EXAMPLES = {
         "Enable stream moderation",
         "Start monitoring the stream",
     ],
-    "GET_CURRENT": [
+    "GET_CURRENT_CHAT": [
         "Get now",
         "Get current",
         "Display current",
@@ -65,7 +65,7 @@ STREAMER_INTENT_EXAMPLES = {
         "Retrieve the latest topic",
         "What’s live right now?",
     ],
-    "GET_NEXT": [
+    "GET_NEXT_CHAT": [
         "Get next",
         "Display next",
         "What’s next?",
@@ -79,7 +79,7 @@ STREAMER_INTENT_EXAMPLES = {
         "What follows this?",
         "Move to the next topic",
     ],
-    "REPLY": [
+    "REPLY_CHAT": [
         "Respond to the message",
         "Write a reply",
         "Reply as",
@@ -124,6 +124,9 @@ STREAMER_INTENT_EXAMPLES = {
         "Share your reply about AI"
     ],
     "UNKNOWN": [
+        "Hi",
+        "Hello",
+        "Whatsup",
         "What is pydantic ai?",
         "Use knowledge base to answer",
         "Use RAG to answer",
@@ -223,7 +226,7 @@ EMBEDDING_DIMENSIONS = 768
     This integer represents the number of dimensions in the vector space where text
     is embedded.
 """
-CHUNK_SIZE = 3000
+CHUNK_SIZE = 1000
 """Size of text chunks used for processing.
 
     This integer defines the maximum number of characters to consider when processing

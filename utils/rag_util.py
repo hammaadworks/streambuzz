@@ -44,7 +44,7 @@ async def get_title_and_summary(chunk: str) -> dict:
     try:
         completions = await buzz_intern_agent.run(
             user_prompt=f"{TITLE_SUMMARY_PROMPT}\n{chunk[:500]}",
-            result_type=dict
+            result_type=str
         )
         response_text = completions.data
         if response_text.startswith("```json"):
