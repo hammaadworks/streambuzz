@@ -39,7 +39,7 @@ Alternatively, build an image from the Dockerfile and save yourself the setup ha
 ### Configuration
 1. Fill in your keys as specified in the `.env.example` file.
 2. Create database tables using the DDL commands provided in `queries.sql`.
-3. Set up the user interface using **Agent 0 by Ottomator.ai** ([Ottomator Studio](https://studio.ottomator.ai/)).
+3. Set up the user interface using **Agent 0 by Ottomator.ai** ([Agent 0](https://studio.ottomator.ai/agent/0)).
 
 ### Running StreamBuzz
 ```bash
@@ -61,10 +61,27 @@ All in all, StreamBuzz is the ultimate **companion and chat moderator** for YouT
 
 ## Architecture & Product Demos
 ### Architecture Diagrams
-![Architecture Diagram](path/to/architecture_diagram.png)
+*A Moderator Crew of 4 Agents to your rescue!*
+![Architecture Diagram](./media/agents.png)
 
-### Product Demos & GIFs
-![Demo GIF](path/to/demo.gif)
+## Demo Gallery
+Here’s a closer look at StreamBuzz in action:
+
+![Start Chat Moderation](./media/start_stream.png)  
+*1. Staring chat moderation on StreamBuzz*
+
+![Chat Navigation](./media/chat_nav.png)  
+*2. Chat navigation on StreamBuzz*
+
+![Up to date](./media/caught-up.png)  
+*3. Up to date with all useful chats - A Streamer's dream come true. 🎉*
+
+![Reply Integration](./media/reply.png)  
+*4. Seamless integration of replies with YouTube Live Chat.*
+
+![YouTube Reply](./media/post_reply.png)  
+*5. Reply posted on YouTube Live Chat by StreamBuzz*
+
 
 ## Acknowledgments
 StreamBuzz was created as part of the **oTTomator Live Agent Studio Hackathon**. Huge shoutout to the **Ottomator AI Team** for hosting this incredible event and pushing the boundaries of AI-powered automation! 🎉
