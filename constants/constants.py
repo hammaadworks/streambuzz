@@ -146,68 +146,6 @@ STREAMER_INTENT_EXAMPLES = {
     This dictionary maps intent names (keys) to lists of example phrases (values)
     that a streamer might use to trigger that intent.
 """
-CHAT_INTENT_EXAMPLES = {
-    "QUESTION": [
-        "How does machine learning work?",
-        "Which GPU are you using for streaming?",
-        "Can AI be used to improve gaming performance?",
-        "What’s the best budget gaming PC?",
-        "How do I reduce lag while streaming?",
-        "Which streaming software do you recommend?",
-        "How does ray tracing improve graphics?",
-        "What are the best settings for high FPS?",
-        "Do you think AI will change competitive gaming?",
-        "How does upscaling work in modern GPUs?",
-    ],
-    "CONCERN": [
-        "The stream keeps buffering; is there an issue?",
-        "My game keeps crashing after the latest update.",
-        "Why is the latency so high on this stream?",
-        "My FPS drops every time I launch the game, any fix?",
-        "The server seems to be lagging a lot today.",
-        "This update ruined my gaming experience.",
-        "My microphone isn’t being detected in the stream, any advice?",
-        "I followed your guide, but my setup still doesn’t work.",
-        "I’m worried about AI-generated deepfakes being misused.",
-        "The audio and video seem out of sync on the stream.",
-    ],
-    "REQUEST": [
-        "Can you play a round of Valorant next?",
-        "Please review the new RTX 4090 GPU.",
-        "Could you explain how neural networks work?",
-        "Show us your gaming setup!",
-        "React to the latest esports tournament highlights!",
-        "Can you test this game with ultra settings?",
-        "Try speedrunning this level!",
-        "Can you give a shoutout to my channel?",
-        "Please demo AI-generated voiceovers.",
-        "Do a comparison between AMD and NVIDIA GPUs.",
-    ],
-    "UNKNOWN": [
-        "Hello, great stream!",
-        "LOL, that was epic!",
-        "Good morning, everyone!",
-        "Awesome content as always.",
-        "Hey, how’s it going?",
-        "Nice to see you streaming!",
-        "What’s up?",
-        "This chat is on fire today!",
-        "Haha, that was hilarious!",
-        "Good evening, hope you’re doing well.",
-        "Yo!",
-        "Great job!",
-        "That was insane!",
-        "Just chilling and watching the stream.",
-        "Keep up the great work!",
-        "Hello, how are you?",
-        "Can I ask you a question? (meta-question)",
-    ],
-}
-"""Examples of chat intents and their corresponding phrases.
-
-    This dictionary maps intent names (keys) to lists of example phrases (values)
-    that a chat user might use to express that intent.
-"""
 
 # Model Constants
 NLP_MODEL = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -310,6 +248,8 @@ YOUTUBE_LIVE_API_ENDPOINT = "https://www.googleapis.com/youtube/v3/liveChat/mess
 
     This string defines the API endpoint for retrieving live chat messages from YouTube.
 """
+OAUTH_TOKEN_URI = "https://oauth2.googleapis.com/token"
+YOUTUBE_SSL = "https://www.googleapis.com/auth/youtube.force-ssl"
 
 # Supabase setup constants
 SUPABASE_CLIENT = create_client(
@@ -325,11 +265,6 @@ MESSAGES = "messages"
 """Name of the messages table.
 
     This string represents the name of the table storing chat messages.
-"""
-YT_KEYS = "youtube_keys"
-"""Name of the youtube keys table.
-
-    This string represents the name of the table storing youtube API keys.
 """
 YT_STREAMS = "youtube_streams"
 """Name of the youtube streams table.

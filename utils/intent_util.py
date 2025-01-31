@@ -4,9 +4,9 @@ from typing import List
 import torch
 from sentence_transformers import util
 
-from constants.constants import (CHAT_INTENT_EXAMPLES, CONFIDENCE_THRESHOLD, NLP_MODEL,
+from constants.constants import (CONFIDENCE_THRESHOLD, NLP_MODEL,
                                  STREAMER_INTENT_EXAMPLES, YOUTUBE_URL_REGEX)
-from constants.enums import ChatIntentEnum, StreamerIntentEnum
+from constants.enums import StreamerIntentEnum
 from logger import log_method
 
 # Compute embeddings for streamer buzz_type examples
@@ -19,17 +19,6 @@ for intent, examples in STREAMER_INTENT_EXAMPLES.items():
     # Take the mean embedding for the buzz_type
     streamer_intent_embeddings[intent] = torch.mean(embeddings, dim=0)
 print("Streamer Intent Embeddings generated!!")
-
-# Compute embeddings for chat buzz_type examples
-chat_intent_embeddings = {}
-for intent, examples in CHAT_INTENT_EXAMPLES.items():
-    # Generate embeddings for all examples of the buzz_type
-    embeddings = NLP_MODEL.encode(
-        examples, convert_to_tensor=True, batch_size=32, show_progress_bar=True
-    )
-    # Take the mean embedding for the buzz_type
-    chat_intent_embeddings[intent] = torch.mean(embeddings, dim=0)
-print("Chat Intent Embeddings generated!!")
 
 
 def contains_valid_youtube_url(user_query: str) -> bool:
@@ -98,41 +87,3 @@ async def classify_streamer_intent(
     except Exception as e:
         print(f"Error classifying buzz_type: {e}")
         return StreamerIntentEnum.UNKNOWN
-
-
-@log_method
-async def classify_chat_intent(chat: str) -> ChatIntentEnum:
-    """Classifies the intent of a chat message.
-
-    This function uses sentence embeddings to classify the intent of a given chat
-    message. It calculates the cosine similarity between the embedding of the chat
-    message and pre-computed embeddings for each chat intent. The intent with the
-    highest similarity is returned.
-
-    Args:
-        chat: The chat message to classify.
-
-    Returns:
-        The predicted chat intent as a `ChatIntentEnum` value.
-        Returns `ChatIntentEnum.UNKNOWN` if an error occurs during classification.
-    """
-    try:
-        # Encode the query
-        chat_embedding = NLP_MODEL.encode(chat, convert_to_tensor=True)
-
-        # Compute cosine similarity with each buzz_type
-        similarities = {
-            chat_intent: util.cos_sim(chat_embedding, intent_embedding).item()
-            for chat_intent, intent_embedding in chat_intent_embeddings.items()
-        }
-
-        # Find the intent with the highest similarity score
-        predicted_intent, max_similarity = max(similarities.items(), key=lambda x: x[1])
-
-        # If confidence is too low, classify as UNKNOWN
-        if max_similarity < CONFIDENCE_THRESHOLD:
-            return ChatIntentEnum.UNKNOWN
-        return ChatIntentEnum[predicted_intent.upper()]
-    except Exception as e:
-        print(f"Error classifying chat buzz_type: {e}")
-        return ChatIntentEnum.UNKNOWN

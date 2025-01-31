@@ -7,7 +7,7 @@ from pydantic_ai.messages import (ModelRequest, ModelResponse, TextPart,
 
 from constants.constants import (CONVERSATION_CONTEXT, MESSAGES, MODEL_RETRIES,
                                  STREAMER_KB, SUPABASE_CLIENT, YT_BUZZ,
-                                 YT_KEYS, YT_REPLY, YT_STREAMS)
+                                 YT_REPLY, YT_STREAMS)
 from constants.enums import BuzzStatusEnum, StateEnum
 from models.agent_models import ProcessedChunk
 from models.youtube_models import (StreamBuzzModel, StreamMetadataDB,
@@ -146,33 +146,6 @@ async def store_message(
         print(f"Error>> Failed at supabase_util: {str(e)}")
         raise HTTPException(
             status_code=500, detail=f"Failed to store_message: {str(e)}"
-        )
-
-
-# YT_KEYS table queries
-def get_youtube_api_keys() -> List[Dict[str, Any]]:
-    """Fetches the YouTube API keys and access tokens from the `YT_KEYS` table.
-
-    This function retrieves all rows from the `YT_KEYS` table, specifically
-    selecting the `api_key` and `access_token` columns.
-
-    Returns:
-        A list of dictionaries, where each dictionary contains an `api_key` and
-        `access_token` key-value pair.
-
-    Raises:
-        HTTPException: If an error occurs during the database query, with a 500
-        status code and error details.
-    """
-    try:
-        response = (
-            SUPABASE_CLIENT.table(YT_KEYS).select("api_key, access_token").execute()
-        )
-        return response.data
-    except Exception as e:
-        print(f"Error>> Failed at supabase_util: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get_youtube_api_keys: {str(e)}"
         )
 
 

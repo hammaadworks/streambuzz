@@ -2,6 +2,28 @@
 
 ---
 
+## **Index**
+
+1. [Intro](#your-ai-powered-youtube-live-stream-chat-moderator)
+2. [Why StreamBuzz?](#why-streambuzz)
+   - [The Solution](#the-solution)
+   - [Benefits](#benefits)
+3. [Usage](#usage)
+4. [Features](#features)
+5. [Getting Started](#getting-started)
+   - [Installation](#installation)
+   - [Configuration](#configuration)
+   - [Running StreamBuzz](#running-streambuzz)
+6. [Demo & Architecture](#demo--architecture)
+   - [Demo Gallery 🎥](#demo-gallery-)
+   - [Architecture Diagrams](#architecture-diagrams)
+7. [Project Nuances and Future Scope](#project-nuances-and-future-scope)
+   - [Current Limitations](#current-limitations)
+   - [Future Scope](#future-scope)
+8. [Acknowledgments](#acknowledgments-)
+
+---
+
 ## **Your AI-powered YouTube Live Stream Chat Moderator**
 
 **Attention Streamers!!**
@@ -19,9 +41,9 @@ Live streaming is booming, with over **2 billion monthly YouTube users**. Stream
 StreamBuzz **filters the noise, highlights key messages, and automates replies**, so you can engage without stress. No more hunting through chat chaos—just smooth sailing! ⛵
 
 <p align="center">
-  <img src="./media/demo.gif" width="70%" alt="StreamBuzz Live Demo">
+  <img src="./media/demo.gif" width="70%" alt="StreamBuzz Demo GIF">
 </p>
-<p align="center"><b>Watch how StreamBuzz moderates live chats effortlessly!</b></p>
+<p align="center"><b>StreamBuzz Live!</b></p>
 
 
 ### **Benefits**
@@ -72,15 +94,14 @@ source ./.venv/bin/activate
 pip install -Ur requirements.txt
 ```
 
-Alternatively, build an image from the `Dockerfile` and save yourself the setup hassle.
 
 ### **Configuration**
 
-1. Fill in your keys as specified in the `.env.example` file. Use your model of choice by changing variables in `constants.py` under model section.
-2. Create database tables using the DDL commands provided in `queries.sql` file. This project uses Supabase. You can store your YouTube API keys in the `youtube_keys` table.
-
-    *Note: Hackathon organisers kindly contact [me](mailto:hammaadworks@gmail.com) for Supabase domain and anon key or kindly share those, I'll add the YouTube keys*
-    
+1. Fill in your keys as specified in the `.env.example` file. 
+   - Use your model of choice by changing variables in `constants.py` under model section.
+   - Paste your YouTube credentials in `.env` file as specified in `.env.example` file.
+    **Note: Hackathon organisers, kindly contact me at hammaadworks@gmail.com for YouTube Credentials to get the project started**
+2. Create database tables using the DDL commands provided in `queries.sql` file.
 3. Set up the user interface using **Agent 0 by Ottomator.ai** ([Agent 0](https://studio.ottomator.ai/agent/0)).
 
 
@@ -108,7 +129,7 @@ Alternatively, build an image from the `Dockerfile` and save yourself the setup 
 
 ## **Demo & Architecture**
 
-### **Demo Gallery 🎥**
+### **Demo Gallery**
 
 #### **Experience StreamBuzz in Action!**
 
@@ -119,6 +140,9 @@ Alternatively, build an image from the `Dockerfile` and save yourself the setup 
 </p>
 
 <p align="center"><b>0. Click the thumbnail to watch the demo on YouTube! 🚀</b></p>
+
+*WIP: Uploading to YouTube in progress, Updating this asap!! Stay tuned :)*
+
 
 <p align="center">
   <img src="./media/start_stream.png" width="60%" alt="Start Chat Moderation">
@@ -157,6 +181,8 @@ Alternatively, build an image from the `Dockerfile` and save yourself the setup 
   <img src="./media/agents.png" width="70%" alt="StreamBuzz Live Demo">
 </p>
 <p align="center"><b>A Moderator Crew of 4 Agents to your rescue!</b></p>
+
+*WIP: Proofreading in progress, Updating this asap!! Stay tuned :)*
 
 ---
 

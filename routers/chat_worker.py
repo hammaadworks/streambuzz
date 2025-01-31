@@ -15,7 +15,6 @@ from models.agent_models import ProcessFoundBuzz
 from models.youtube_models import StreamBuzzModel, WriteChatModel
 from utils import supabase_util, youtube_util
 from utils.supabase_util import store_message
-from utils.youtube_util import get_youtube_api_keys
 
 # Create API router for managing live chats
 router = APIRouter()
@@ -170,9 +169,7 @@ async def process_chat_messages(chat_list: List[Dict[str, Any]], session_id: str
 
 
 @log_method
-async def process_active_streams(
-    active_streams: List[Dict[str, Any]], api_keys: Dict[str, str]
-):
+async def process_active_streams(active_streams: List[Dict[str, Any]]):
     """
     Processes all active streams.
 
@@ -185,7 +182,6 @@ async def process_active_streams(
         active_streams (List[Dict[str, Any]]): A list of dictionaries, where each
             dictionary represents an active stream and contains at least the keys
             'session_id', 'live_chat_id', and 'next_chat_page'.
-        api_keys (Dict[str, str]): A dictionary containing YouTube API keys.
 
     Raises:
         Exception: If an error occurs during the processing of a stream,
@@ -199,7 +195,7 @@ async def process_active_streams(
                 stream["next_chat_page"],
             )
             chat_list = await youtube_util.get_live_chat_messages(
-                session_id, live_chat_id, next_chat_page, api_keys
+                session_id, live_chat_id, next_chat_page
             )
             if not chat_list:
                 return
@@ -225,10 +221,9 @@ async def read_live_chats():
     responses for the newly created buzzes.
     """
     # Get active stream sessions
-    api_keys = get_youtube_api_keys()
     active_streams = await supabase_util.get_active_streams()
     if active_streams:
-        await process_active_streams(active_streams, api_keys)
+        await process_active_streams(active_streams)
     await process_buzz()
 
 
@@ -339,7 +334,6 @@ async def write_live_chats():
                     url=YOUTUBE_LIVE_API_ENDPOINT,
                     params=params,
                     payload=payload,
-                    api_keys=get_youtube_api_keys(),
                 )
                 await supabase_util.mark_replies_success(reply.live_chat_id)
                 await store_message(

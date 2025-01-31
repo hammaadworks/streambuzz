@@ -1,35 +1,49 @@
+import json
+import os
 import re
 import time
 from urllib.parse import parse_qs, urlparse
 
 import requests
 from cachetools.func import ttl_cache
+from dotenv import load_dotenv
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 from requests import HTTPError
 
-from constants.constants import (ALLOWED_DOMAINS, YOUTUBE_API_ENDPOINT,
-                                 YOUTUBE_LIVE_API_ENDPOINT)
+from constants.constants import (ALLOWED_DOMAINS, OAUTH_TOKEN_URI, YOUTUBE_API_ENDPOINT,
+                                 YOUTUBE_LIVE_API_ENDPOINT, YOUTUBE_SSL)
 from constants.enums import BuzzStatusEnum
 from exceptions.user_error import UserError
 from logger import log_method
 from utils import supabase_util
 
+# Load environment variables from .env file
+load_dotenv()
 
-@ttl_cache(ttl=180)
-def get_youtube_api_keys():
-    """
-    Retrieves YouTube API keys from the Supabase database.
+# Retrieve and parse the dictionary
+YOUTUBE_API_KEY_BUNCHES_ENV = json.loads(os.getenv("YOUTUBE_API_KEY_BUNCHES"))
 
-    This function uses a time-to-live (TTL) cache to store the API keys for 180 seconds,
-    reducing the number of database calls.
 
-    Returns:
-        list: A list of dictionaries, where each dictionary contains an API key
-              and its associated information.
+@ttl_cache(ttl=3600)
+def get_youtube_api_key_bunches():
+    youtube_api_key_bunches = []
+    for key_bunch in YOUTUBE_API_KEY_BUNCHES_ENV:
+        creds = Credentials(
+            None,  # No initial access token
+            refresh_token=key_bunch["refresh_token"],
+            token_uri=OAUTH_TOKEN_URI,
+            client_id=key_bunch["client_id"],
+            client_secret=key_bunch["client_secret"],
+            scopes=[YOUTUBE_SSL]
+        )
+        if not creds.valid:
+            creds.refresh(Request())
+            print("Token refreshed successfully.")
+        key_bunch["access_token"] = creds.token
+        youtube_api_key_bunches.append(key_bunch)
 
-    Raises:
-        Exception: If there's an error retrieving the API keys from the database.
-    """
-    return supabase_util.get_youtube_api_keys()
+    return youtube_api_key_bunches
 
 
 @log_method
@@ -118,13 +132,12 @@ async def get_stream_metadata(video_id: str, session_id: str) -> dict:
         Exception: If there's any other unexpected error during the process.
     """
     try:
-        api_keys = get_youtube_api_keys()
         params = {
             "part": "liveStreamingDetails,snippet",
             "id": video_id,
         }
         response = await get_request_with_retries(
-            YOUTUBE_API_ENDPOINT, params, api_keys, session_id, use_keys=True
+            YOUTUBE_API_ENDPOINT, params, session_id, use_keys=True
         )
 
         return response
@@ -138,7 +151,7 @@ async def get_stream_metadata(video_id: str, session_id: str) -> dict:
 
 @log_method
 async def post_request_with_retries(
-    url: str, params: dict, payload: dict, api_keys: list, use_keys: bool = False
+        url: str, params: dict, payload: dict, use_keys: bool = False
 ) -> dict:
     """
     Makes a POST request with retries using multiple API keys.
@@ -152,9 +165,6 @@ async def post_request_with_retries(
         url (str): The URL to make the POST request to.
         params (dict): The parameters to include in the POST request.
         payload (dict): The payload to include in the POST request.
-        api_keys (list): A list of dictionaries, where each dictionary contains
-                        either an 'api_key' or an 'access_token' and other
-                        associated information.
         use_keys (bool): If True, uses 'api_key' for authentication;
                         otherwise, uses 'access_token'. Defaults to False.
 
@@ -164,7 +174,8 @@ async def post_request_with_retries(
     Raises:
         HTTPError: If all API keys fail or the maximum number of retries is reached.
     """
-    for attempt, key_dict in enumerate(api_keys):
+    api_key_bunches = get_youtube_api_key_bunches()
+    for attempt, key_dict in enumerate(api_key_bunches):
         if use_keys:
             params["key"] = key_dict["api_key"]
             response = requests.post(url, params=params, data=payload, timeout=10)
@@ -203,7 +214,7 @@ async def post_request_with_retries(
 
 @log_method
 async def get_request_with_retries(
-    url: str, params: dict, api_keys: list, session_id: str, use_keys: bool = True
+        url: str, params: dict, session_id: str, use_keys: bool = True
 ) -> dict:
     """Makes a GET request with retries using multiple API keys.
 
@@ -215,9 +226,6 @@ async def get_request_with_retries(
     Args:
         url (str): The URL to make the GET request to.
         params (dict): The parameters to include in the GET request.
-        api_keys (list): A list of dictionaries, where each dictionary contains
-                        either an 'api_key' or an 'access_token' and other
-                        associated information.
         session_id (str): The session ID associated with the request.
         use_keys (bool): If True, uses 'api_key' for authentication;
                         otherwise, uses 'access_token'. Defaults to True.
@@ -228,7 +236,8 @@ async def get_request_with_retries(
     Raises:
         HTTPError: If all API keys fail or the maximum number of retries is reached.
     """
-    for attempt, key_dict in enumerate(api_keys):
+    api_key_bunches = get_youtube_api_key_bunches()
+    for attempt, key_dict in enumerate(api_key_bunches):
         if use_keys:
             params["key"] = key_dict["api_key"]
             response = requests.get(url, params=params, timeout=10)
@@ -341,9 +350,8 @@ async def deactivate_session(session_id: str) -> None:
 
 
 @log_method
-async def get_live_chat_messages(
-    session_id: str, live_chat_id: str, next_chat_page: str, api_keys: list
-) -> list:
+async def get_live_chat_messages(session_id: str, live_chat_id: str,
+                                 next_chat_page: str) -> list:
     """
     Retrieves live chat messages from YouTube using the Live Chat API.
 
@@ -354,8 +362,6 @@ async def get_live_chat_messages(
         session_id (str): The session ID associated with the request.
         live_chat_id (str): The YouTube live chat ID to fetch messages from.
         next_chat_page (str): The token for the next page of chat messages.
-        api_keys (list): A list of dictionaries, where each dictionary contains
-                         an 'api_key' and other associated information.
 
     Returns:
         list: A list of dictionaries, where each dictionary represents a chat
@@ -371,7 +377,6 @@ async def get_live_chat_messages(
     live_chat_response = await get_request_with_retries(
         url=YOUTUBE_LIVE_API_ENDPOINT,
         params=params,
-        api_keys=api_keys,
         session_id=session_id,
         use_keys=True,
     )
