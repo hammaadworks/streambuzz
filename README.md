@@ -6,23 +6,23 @@
 
 1. [Intro](#your-ai-powered-youtube-live-stream-chat-moderator)
 2. [Why StreamBuzz?](#why-streambuzz)
-  - [The Solution](#the-solution)
-  - [Usage](#usage)
-  - [Benefits](#benefits)
-  - [Features](#features)
-5. [Getting Started](#getting-started)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-  - [Running StreamBuzz](#running-streambuzz)
-6. [Demo & Architecture](#demo--architecture)
-  - [Demo Gallery](#demo-gallery)
-    - [Images](#images)
-    - [Videos](#videos)
-  - [Architecture Diagrams](#architecture-diagrams)
-7. [Project Nuances and Future Scope](#project-nuances-and-future-scope)
-  - [Current Limitations](#current-limitations)
-  - [Future Scope](#future-scope)
-8. [Acknowledgments](#acknowledgments-)
+   - [The Solution](#the-solution)
+   - [Usage](#usage)
+   - [Benefits](#benefits)
+   - [Features](#features)
+3. [Getting Started](#getting-started)
+   - [Installation](#installation)
+     - [Configuration](#configuration)
+     - [Running StreamBuzz](#running-streambuzz)
+4. [Demo & Architecture](#demo--architecture)
+   - [Demo Gallery](#demo-gallery)
+     - [Images](#images)
+     - [Videos](#videos)
+     - [Architecture Diagrams](#architecture-diagrams)
+5. [Project Nuances and Future Scope](#project-nuances-and-future-scope)
+   - [Current Limitations](#current-limitations)
+   - [Future Scope](#future-scope)
+6. [Acknowledgments](#acknowledgments-)
 
 ---
 
@@ -57,11 +57,15 @@ StreamBuzz **filters the noise, highlights key messages, and automates replies**
 
 ### **Usage**
 
-1️⃣ Start a YouTube Live Stream.\
-2️⃣ StreamBuzz filters and prioritizes chat messages (buzz) in the background.\
-3️⃣ Navigate through the **real-time buzz list** like a pro.\
-4️⃣ Post replies **directly from the chat interface**—error-free and neatly summarized. StreamBuzz background worker takes care of summarizing and posting your replies. \
-5️⃣ Upload a text file to build a knowledge base and supercharge your responses. ⚡
+1. Go to Live Agent Studio to try [StreamBuzz]()
+2. Pick a YouTube Live Stream, and chat to get started.
+3. StreamBuzz filters and prioritizes chat messages (buzz) in the background. 
+   - StreamBuzz intelligently processes multilingual chats, too.
+4. Navigate through the **real-time buzz list** using natural language.
+   - With sentences like, `get current buzz` or `get next buzz`.
+5. Post replies **directly from the chat interface**—error-free and neatly summarized.
+   - StreamBuzz background worker takes care of correcting typos, summarizing and posting your replies.
+6. Upload a text file to build a knowledge base and supercharge your responses. ⚡
 
 All in all, StreamBuzz is the ultimate **companion and chat moderator** for YouTube Live Streamers. Think of it as your chat butler. ☕
 
