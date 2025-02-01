@@ -5,9 +5,22 @@ Follow word limits if specified. Only return the final response.
 """
 
 CHAT_ANALYSER_PROMPT = """
-Classify as: Question, Concern, Request, or Unknown. Smalltalk and hate speech are 
-Unknown. Reply with the category only.
-Chat: 
+Prompt:
+Classify original_chat as QUESTION, CONCERN, or REQUEST.
+
+Rules:
+1. Exclude records classified as Unknown (small talk, hate speech or irrelevant).
+2. Return a JSON list with:
+    - original_chat (unchanged)
+    - author (unchanged)
+    - intent (QUESTION, CONCERN, or REQUEST).
+3. Ensure intent has only one value.
+
+Input:
+JSON list with original_chat and author.
+
+Output:
+JSON list with original_chat, author, and intent.
 """
 
 TITLE_SUMMARY_PROMPT = """

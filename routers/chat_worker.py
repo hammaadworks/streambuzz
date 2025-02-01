@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from collections import defaultdict
@@ -12,7 +13,7 @@ from constants.enums import BuzzStatusEnum, ChatIntentEnum
 from constants.prompts import CHAT_ANALYSER_PROMPT, REPLY_SUMMARISER_PROMPT
 from logger import log_method
 from models.agent_models import ProcessFoundBuzz
-from models.youtube_models import StreamBuzzModel, WriteChatModel
+from models.youtube_models import ChatIntent, StreamBuzzModel, WriteChatModel
 from utils import supabase_util, youtube_util
 from utils.supabase_util import store_message
 
@@ -46,8 +47,9 @@ async def process_buzz():
     )
     for buzz in found_buzz_object_list:
         try:
+            await asyncio.sleep(2)
             response = await responder_agent.run(
-                user_prompt=f"Generate response within 400 words for this "
+                user_prompt=f"Generate response within 300 words for this "
                             f"{ChatIntentEnum(buzz.buzz_type)}:\n{buzz.original_chat}",
                 result_type=str,
             )
@@ -67,7 +69,7 @@ async def process_buzz():
                 await supabase_util.store_message(
                     session_id=buzz.session_id,
                     message_type="ai",
-                    content= buzz_message_display.data
+                    content=buzz_message_display.data,
                 )
 
             await supabase_util.update_buzz_response_by_id(
@@ -79,7 +81,6 @@ async def process_buzz():
             await supabase_util.update_buzz_status_by_id(
                 buzz_id=buzz.id, buzz_status=BuzzStatusEnum.FOUND.value
             )
-            raise
 
 
 def filter_chat_message(chat: str) -> str:
@@ -124,7 +125,7 @@ def filter_chat_message(chat: str) -> str:
 
 
 @log_method
-async def process_chat_messages(chat_list: List[Dict[str, Any]], session_id: str):
+async def process_chat_messages(chat_list: List[Dict[str, str]], session_id: str):
     """
     Processes a list of chat messages for a given session.
 
@@ -144,28 +145,33 @@ async def process_chat_messages(chat_list: List[Dict[str, Any]], session_id: str
         Exception: If an error occurs during the processing of a chat message,
             the exception is caught, logged, and not re-raised.
     """
+    # Filter original chat
+    filtered_chat_list = []
     for chat in chat_list:
-        try:
-            original_chat, author = chat["original_chat"], chat["author"]
-            if filter_chat_message(original_chat):
-                chat_intent = await buzz_intern_agent.run(
-                    user_prompt=f"{CHAT_ANALYSER_PROMPT}{original_chat}"
-                )
+        if filter_chat_message(chat["original_chat"]):
+            filtered_chat_list.append(chat)
 
-                if ChatIntentEnum.UNKNOWN.value not in chat_intent.data.strip().upper():
-                    await supabase_util.store_buzz(
-                        StreamBuzzModel(
-                            session_id=session_id,
-                            original_chat=original_chat,
-                            author=author,
-                            buzz_status=BuzzStatusEnum.FOUND.value,
-                            buzz_type=chat_intent.value,
-                            generated_response="",
-                        )
-                    )
+    #  Can I get process the chat list in one go?
+    chat_intent_response = await buzz_intern_agent.run(
+        f"{CHAT_ANALYSER_PROMPT}\n{filtered_chat_list}", result_type=list[ChatIntent]
+    )
+    chat_intent_response_list = chat_intent_response.data
+
+    for chat_intent in chat_intent_response_list:
+        try:
+            await supabase_util.store_buzz(
+                StreamBuzzModel(
+                    session_id=session_id,
+                    original_chat=chat_intent.original_chat,
+                    author=chat_intent.author,
+                    buzz_status=BuzzStatusEnum.FOUND.value,
+                    buzz_type=chat_intent.intent.upper(),
+                    generated_response="",
+                )
+            )
         except Exception as e:
             # Log the exception for the chat-level failure
-            print(f"Error processing chat: {chat}. Exception: {e}")
+            print(f"Error processing chat: {chat_intent}. Exception: {e}")
 
 
 @log_method

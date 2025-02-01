@@ -137,3 +137,8 @@ class WriteChatModel(BaseModel):
     reply: str
     reply_summary: Optional[str] = ""
     is_written: Optional[int] = 0
+
+class ChatIntent(BaseModel):
+    original_chat: str
+    author: str
+    intent: str
