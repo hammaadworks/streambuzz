@@ -71,27 +71,3 @@ class StateEnum(Enum):
     """Indicates a positive or 'yes' state."""
     PENDING = 2
     """Indicates a pending or undecided state."""
-
-
-class ChatIntentEnum(Enum):
-    """
-    Enumeration representing the different intents a user might have in a chat.
-
-    This enum defines the possible purposes behind a user's message in a chat,
-    such as asking a question, expressing a concern, or making a request.
-
-    Attributes:
-        UNKNOWN: Indicates the user's intent is unknown or could not be determined.
-        QUESTION: Indicates the user is asking a question.
-        CONCERN: Indicates the user is expressing a concern.
-        REQUEST: Indicates the user is making a request.
-    """
-
-    UNKNOWN = "UNKNOWN"
-    """Indicates the user's intent is unknown or could not be determined."""
-    QUESTION = "QUESTION"
-    """Indicates the user is asking a question."""
-    CONCERN = "CONCERN"
-    """Indicates the user is expressing a concern."""
-    REQUEST = "REQUEST"
-    """Indicates the user is making a request."""

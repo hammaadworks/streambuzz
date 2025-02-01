@@ -9,7 +9,7 @@ from fastapi import APIRouter
 from agents.buzz_intern import buzz_intern_agent
 from agents.responder import responder_agent
 from constants.constants import YOUTUBE_LIVE_API_ENDPOINT
-from constants.enums import BuzzStatusEnum, ChatIntentEnum
+from constants.enums import BuzzStatusEnum
 from constants.prompts import CHAT_ANALYSER_PROMPT, REPLY_SUMMARISER_PROMPT
 from logger import log_method
 from models.agent_models import ProcessFoundBuzz
@@ -50,7 +50,7 @@ async def process_buzz():
             await asyncio.sleep(2)
             response = await responder_agent.run(
                 user_prompt=f"Generate response within 300 words for this "
-                            f"{ChatIntentEnum(buzz.buzz_type)}:\n{buzz.original_chat}",
+                            f"{buzz.buzz_type.strip().upper()}:\n{buzz.original_chat}",
                 result_type=str,
             )
 
@@ -165,7 +165,7 @@ async def process_chat_messages(chat_list: List[Dict[str, str]], session_id: str
                     original_chat=chat_intent.original_chat,
                     author=chat_intent.author,
                     buzz_status=BuzzStatusEnum.FOUND.value,
-                    buzz_type=chat_intent.intent.upper(),
+                    buzz_type=chat_intent.intent.strip().upper(),
                     generated_response="",
                 )
             )
