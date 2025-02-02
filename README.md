@@ -2,6 +2,18 @@
 
 ---
 
+## Hackathon Community Voting
+
+1. 🌟 **Visit Live Agent Studio** to explore [StreamBuzz](https://studio.ottomator.ai/streambuzz) and a ton of other incredible agents! 
+
+Voting Link: *WIP: I'll update the voting link soon!*
+
+2. 🎬 **Try out StreamBuzz**! Before diving in, please check out the [usage](#usage) section for the best experience, or simply watch the [demo video](https://youtu.be/7PgvglcWNNA) to get a quick overview.  
+3. ✅ **Cast your vote** for your favorite agents—I'm hoping that StreamBuzz is one of them! 🤩
+4. 🤗 **Thank you so much** for your support! Your vote means a lot.  
+
+---
+
 ## **Index**
 
 1. [Intro](#your-ai-powered-youtube-live-stream-chat-moderator)
@@ -42,16 +54,22 @@ Live streaming is booming, with over **2 billion monthly YouTube users**. Stream
 
 StreamBuzz **filters the noise, highlights key messages, and automates replies**, so you can engage without stress. No more hunting through chat chaos—just smooth sailing! ⛵
 
-<p align="center">
+<center>
   <img src="./media/image/feature-map.png" width="60%" alt="StreamBuzz feature map">
-</p>
-<p align="center"><b>StreamBuzz Feature Map</b>
-</p>
+</center>
+<center>
 
-<p align="center">
+  **StreamBuzz Feature Map**
+</center>
+<center>
   <img src="./media/demo.gif" width="70%" alt="StreamBuzz Demo GIF">
-</p>
-<p align="center"><b>StreamBuzz Live!</b><em>WIP: Updating soon!</em></p>
+</center>
+<center>
+
+  **StreamBuzz Live!: WIP**
+
+  [Watch Demo on YouTube!](#experience-streambuzz-in-action)
+</center>
 
 ---
 
@@ -65,9 +83,9 @@ StreamBuzz **filters the noise, highlights key messages, and automates replies**
    - With sentences like, `get current buzz` or `get next buzz`.
 5. Post replies **directly from the chat interface**—error-free and neatly summarized.
    - StreamBuzz background worker takes care of correcting typos, summarizing and posting your replies.
-6. Upload a text file to build a knowledge base and supercharge your responses. ⚡
+6. Upload a text file to build a knowledge base and supercharge your responses. ⚡️
 
-All in all, StreamBuzz is the ultimate **companion and chat moderator** for YouTube Live Streamers. Think of it as your chat butler. ☕
+All in all, StreamBuzz is the ultimate **companion and chat moderator** to supercharge your YouTube Live Streaming experience.
 
 ---
 
@@ -146,66 +164,68 @@ pip install -Ur requirements.txt
 
 #### **Experience StreamBuzz in Action!**
 
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=YOUR_VIDEO_ID">
-    <img src="https://img.youtube.com/vi/YOUR_VIDEO_ID/maxresdefault.jpg" alt="StreamBuzz Demo" width="600">
+<center>
+  <a href="https://www.youtube.com/watch?v=7PgvglcWNNA">
+    <img src="./media/image/thumbnail.png" alt="StreamBuzz Demo" width="600">
   </a>
-</p>
+</center>
 
-<p align="center"><b>Click the thumbnail to watch the demo on YouTube! 🚀</b></p>
-
-*WIP: Uploading to YouTube in progress, Updating this asap!! Stay tuned :)*
+<center><b>Click the thumbnail to watch the demo on YouTube! 🚀</b></center>
 
 #### **Images**
 
-<p align="center">
+**1. Start chat moderation with ease.**
+<center>
   <img src="./media/image/start_stream.png" width="60%" alt="Start Chat Moderation">
-</p>
-<p align="center"><b>1. Start chat moderation with ease.</b></p>
+</center>
 
 
-<p align="center">
+**2. Navigate through chat messages effortlessly.**
+<center>
   <img src="./media/image/buzz_queue.png" width="60%" alt="Chat Navigation">
-</p>
-<p align="center"><b>2. Navigate through chat messages effortlessly.</b></p>
+</center>
 
 
-<p align="center">
+**3. Stay up to date with all key chats. 🎉**
+<center>
   <img src="./media/image/up_to_date.png" width="60%" alt="Caught Up">
-</p>
-<p align="center"><b>3. Stay up to date with all key chats. 🎉</b></p>
+</center>
 
 
-<p align="center">
+**4. Seamless reply integration with YouTube Live Chat.**
+<center>
   <img src="./media/image/post_reply_buzz.png" width="60%" alt="Reply Integration">
-</p>
-<p align="center"><b>4. Seamless reply integration with YouTube Live Chat.</b></p>
+</center>
 
-
-<p align="center">
+**5. Replies posted within a timeframe of 60 seconds on YouTube Live Chat.**
+<center>
   <img src="./media/image/post_reply.png" width="60%" alt="YouTube Reply">
-</p>
-<p align="center"><b>5. Replies posted within a timeframe of 60 seconds on YouTube Live Chat.</b>
-</p>
+</center>
 
 #### Videos
 
-<p align="center">
+**1. StreamBuzz - Interacting with Live Stream - WIP**
+<center>
+  <a href="https://www.youtube.com/watch?v=TPPxOZ4SpSk">
+    <img src="https://img.youtube.com/vi/TPPxOZ4SpSk/maxresdefault.jpg" alt="StreamBuzz Youtube Live Demo" width="600">
+  </a>
+</center>
+
+**2. StreamBuzz - RAG**
+<center>
   <a href="https://www.youtube.com/watch?v=TPPxOZ4SpSk">
     <img src="https://img.youtube.com/vi/TPPxOZ4SpSk/maxresdefault.jpg" alt="StreamBuzz RAG Demo" width="600">
   </a>
-</p>
-
-<p align="center"><b>StreamBuzz RAG Demo</b></p>
+</center>
 
 ### **Architecture Diagrams**
 
-<p align="center">
+<center>
   <img src="./media/image/agents.png" width="70%" alt="StreamBuzz Architecture">
-</p>
-<p align="center"><b>A Moderator Crew of 5 Agents to your rescue!</b></p>
+</center>
+<center><b>A Moderator Crew of 5 Agents to your rescue!</b></center>
 
-*WIP: Proofreading in progress, Updating this asap!! Stay tuned :)*
+*WIP: Proofreading in progress, Updating this asap!! Stay tuned*
 
 ---
 
