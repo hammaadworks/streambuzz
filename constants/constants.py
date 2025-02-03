@@ -36,7 +36,11 @@ START_STREAM_APPEND = f"\n\nFetching buzz in {CHAT_READ_INTERVAL} seconds..."
 CONFIDENCE_THRESHOLD = 0.35
 STREAMER_INTENT_EXAMPLES = {
     "START_STREAM": [
+        "I want you to moderate a live stream",
+        "Moderate",
         "Start the stream",
+        "Start",
+        "Start moderating",
         "Begin streaming",
         "Initiate the live stream",
         "Go live",
@@ -50,6 +54,7 @@ STREAMER_INTENT_EXAMPLES = {
         "Activate live moderation",
         "Enable stream moderation",
         "Start monitoring the stream",
+        "Start moderating the stream",
     ],
     "GET_CURRENT_CHAT": [
         "Get now",

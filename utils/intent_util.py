@@ -81,8 +81,8 @@ async def classify_streamer_intent(
 
         # If the START_STREAM query doesn't have a valid YouTube URL, classify it as
         # UNKNOWN
-        if predicted_intent == "START_STREAM" and not contains_valid_youtube_url(query):
-            predicted_intent = "UNKNOWN"
+        if contains_valid_youtube_url(query):
+            predicted_intent = "START_STREAM"
         return StreamerIntentEnum[predicted_intent.upper()]
     except Exception as e:
         print(f"Error classifying buzz_type: {e}")

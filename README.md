@@ -4,7 +4,7 @@
 
 ## Hackathon Community Voting
 
-1. 🌟 **Visit Live Agent Studio** to explore [StreamBuzz](https://studio.ottomator.ai/streambuzz) and a ton of other incredible agents! 
+1. 🌟 **Visit Live Agent Studio** to explore [StreamBuzz](https://studio.ottomator.ai/agent/streambuzz) and a ton of other incredible agents! 
 
 Voting Link: *WIP: I'll update the voting link soon!*
 
@@ -61,21 +61,20 @@ StreamBuzz **filters the noise, highlights key messages, and automates replies**
 
   **StreamBuzz Feature Map**
 </center>
-<center>
-  <img src="./media/demo.gif" width="70%" alt="StreamBuzz Demo GIF">
-</center>
-<center>
 
-  **StreamBuzz Live!: WIP**
-
-  [Watch Demo on YouTube!](#experience-streambuzz-in-action)
+<center>
+  <a href="https://www.youtube.com/watch?v=7PgvglcWNNA">
+    <img src="./media/image/thumbnail.png" alt="StreamBuzz Demo" width="600">
+  </a>
 </center>
+
+<center><b>Click the thumbnail to watch the demo on YouTube! 🚀</b></center>
 
 ---
 
 ### **Usage**
 
-1. Go to Live Agent Studio to try [StreamBuzz]()
+1. Go to Live Agent Studio to try [StreamBuzz](https://studio.ottomator.ai/agent/streambuzz)
 2. Pick a YouTube Live Stream, and chat to get started.
 3. StreamBuzz filters and prioritizes chat messages (buzz) in the background. 
    - StreamBuzz intelligently processes multilingual chats, too.
@@ -161,16 +160,6 @@ pip install -Ur requirements.txt
 ## **Demo & Architecture**
 
 ### **Demo Gallery**
-
-#### **Experience StreamBuzz in Action!**
-
-<center>
-  <a href="https://www.youtube.com/watch?v=7PgvglcWNNA">
-    <img src="./media/image/thumbnail.png" alt="StreamBuzz Demo" width="600">
-  </a>
-</center>
-
-<center><b>Click the thumbnail to watch the demo on YouTube! 🚀</b></center>
 
 #### **Images**
 

@@ -63,17 +63,16 @@ async def validate_and_extract_youtube_id(url: str) -> str:
         str: The extracted video ID if the URL is valid.
 
     Raises:
-        UserError: If the provided URL is invalid due to an invalid domain,
-                   invalid path, or invalid video ID format.
-        Exception: If there's any other unexpected error during the process.
+        UserError: If the provided URL is invalid.
     """
     try:
+        # Ensure URL matches a basic pattern
         url_pattern = r"(https?://|www\.)\S+"
         match = re.search(url_pattern, url)
         if not match:
             raise UserError("No URL found in the text.")
 
-        # Parse the YouTube URL
+        # Parse the URL
         url = match.group()
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
@@ -85,29 +84,39 @@ async def validate_and_extract_youtube_id(url: str) -> str:
             raise UserError(f"Invalid YouTube domain: {domain}")
 
         # Extract video ID based on URL format
+        video_id = None
         if "youtu.be" in domain:
             # Shortened URL
             video_id = path[1:]  # Skip leading '/'
         elif "youtube.com" in domain:
-            # Standard URL or embed URL
+            # Standard, embed, or live URL
             if path == "/watch" and "v" in query:
                 video_id = query["v"][0]
             elif path.startswith("/embed/"):
                 video_id = path.split("/embed/")[1]
+            elif path.startswith("/live/"):
+                # /live/video_id or /live?channel=<channel_id>
+                if len(path.split("/")) > 2:
+                    video_id = path.split("/live/")[1]
+                elif "v" in query:
+                    video_id = query["v"][0]
+            elif "/channel/" in path and "live_stream" in query:
+                # /channel/<channel_id>?view_as=subscriber&live_stream
+                if "v" in query:
+                    video_id = query["v"][0]
             else:
                 raise UserError(f"Invalid YouTube video URL path: {path}")
-        else:
-            raise UserError("Unrecognized YouTube URL format.")
 
         # Validate video ID format (11-character alphanumeric)
-        if not re.match(r"^[a-zA-Z0-9_-]{11}$", video_id):
+        if video_id and re.match(r"^[a-zA-Z0-9_-]{11}$", video_id):
+            return video_id
+        else:
             raise UserError(f"Invalid YouTube video ID: {video_id}")
-        return video_id
     except UserError as ue:
         print(f"Error validating and extracting YouTube ID: {str(ue)}")
         raise
     except Exception as e:
-        print(f"Error validating and extracting YouTube ID: {str(e)}")
+        print(f"Unexpected error: {str(e)}")
         raise
 
 
