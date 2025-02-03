@@ -199,8 +199,10 @@ async def sample_supabase_agent(
         print(f"Error>> get_response: {user_error_string}")
         exception_response = await buzz_intern_agent.run(
             user_prompt=f"Respond with a short polite message within 100 words to "
-                        f"convey the following error.\n{user_error_string}. You can "
-                        f"use emojis sparingly to express yourself.",
+                        f"convey the following error.\n{user_error_string}. "
+                        f"You can mention the user guide "
+                        f"'https://github.com/hammaadworks/streambuzz/?tab=readme-ov-file#hackathon-community-voting'"
+                        f" Use emojis sparingly to express yourself.",
             result_type=str,
             deps=request.session_id,
         )

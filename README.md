@@ -4,10 +4,7 @@
 
 ## Hackathon Community Voting
 
-1. 🌟 **Visit Live Agent Studio** to explore [StreamBuzz](https://studio.ottomator.ai/agent/streambuzz) and a ton of other incredible agents! 
-
-Voting Link: *WIP: I'll update the voting link soon!*
-
+1. 🌟 **Visit Live Agent Studio** to explore [StreamBuzz](https://studio.ottomator.ai/agent/streambuzz) and a ton of other incredible agents!
 2. 🎬 **Try out StreamBuzz**! Before diving in, please check out the [usage](#usage) section for the best experience, or simply watch the [demo video](https://youtu.be/7PgvglcWNNA) to get a quick overview.  
 3. ✅ **Cast your vote** for your favorite agents—I'm hoping that StreamBuzz is one of them! 🤩
 4. 🤗 **Thank you so much** for your support! Your vote means a lot.  
