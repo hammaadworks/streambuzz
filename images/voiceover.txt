@@ -1,0 +1,130 @@
+-- Scene Intro  
+Attention, Streamers!  
+Are you tired of managing tons of live chat messages  
+while presenting your live stream content?  
+
+Well, it’s time to level up your live chat moderation game!  
+
+Hello, everybody!  
+Meet StreamBuzz, your AI-powered live chat moderator.  
+With StreamBuzz, you can focus on  
+delivering amazing content while it handles the  
+live chat chaos behind the scenes.  
+
+This is a submission for Ottomator's Live Agent Studio Hackathon,  
+built for the YouTube live streamer community.  
+Let's find out what StreamBuzz is all about...  
+
+-- Scene Features  
+
+A buzz is any important question, concern, or request posted on the live chat.  
+StreamBuzz fetches those in a queue  
+so that streamers can address them at their own pace  
+without breaking their flow.  
+
+Plus, they can seamlessly post replies through the StreamBuzz interface,  
+making life a lot easier.  
+
+Bonus: StreamBuzz also has RAG baked into it that powers its responses.  
+
+All in all, StreamBuzz is here to supercharge your streaming experience.  
+
+-- Scene Start Stream  
+
+I've started my agent in the background  
+and hooked it up with Agent 0.  
+Let's start moderating a YouTube live stream.  
+For the purpose of this demo, let's moderate this stream.  
+
+Cool! So the agent has registered this stream  
+with our session. Let's verify it.  
+
+A background process named Chat Worker will soon fetch  
+all the live chats, pick up questions, concerns, and requests, and  
+display them here as buzz. Buzz messages are stored in the Buzz Queue, and streamers  
+can navigate it using  
+"get current" and "get next" instructions.  
+
+Another awesome feature is that StreamBuzz,  
+using its intelligence, can intercept multilingual buzz.  
+As we can see, this question is asked in Hinglish,  
+which is Hindi written in English.  
+
+As discussed, streamers can navigate the Buzz Queue anytime  
+by chatting in the lines of getting  
+the current or next buzz.  
+Here's a demo for that:  
+Fetching current buzz...  
+Fetching next buzz...  
+
+-- Scene Reply  
+
+With StreamBuzz, replying to live chat is a game-changer!  
+You can respond directly from the interface,  
+making it super intuitive and saving streamers  
+from the hassle of switching tabs.  
+
+Let’s send a reply—“The match is getting interesting!”  
+Oops, I made a typo!  
+But no worries—StreamBuzz has your back.  
+It automatically corrects typos and  
+even summarizes messages before posting,  
+keeping your interactions smooth and professional.  
+
+Now, let’s check the live chat... Awesome!  
+The reply is posted, just like that.  
+
+And the best part? StreamBuzz always keeps you in the loop  
+with timely updates, so you’re aware of what’s  
+happening behind the scenes.  
+
+-- Scene RAG  
+
+StreamBuzz has RAG-powered responses. That means  
+we can add a knowledge base via a TXT file,  
+and responses will be generated using RAG.  
+It will fall back to LLM responses  
+if it doesn't find any matching data.  
+
+Let's go ahead and ask: What is Agent 0?  
+To all my viewers, Agent 0 is an amazing tool developed  
+by the Ottomator Live Agent Studio team to test out your  
+AI agents. Give it a try!  
+
+Not so impressive answer.  
+
+Now, let's upload a document whose entire content is taken  
+from the Live Agent Studio Developer Guide.  
+Asking the same question:  
+
+It now builds the knowledge base over the text file provided  
+and responds.  
+
+The response is bang on!  
+
+RAG also powers the responses generated in the buzz messages. 
+
+--Scene Outro
+Shoutout to everyone involved and
+especially to the Ottomator Live Agent Studio team 
+for organizing this amazing hackathon! 
+They’re making real contributions to the AI space, 
+so be sure to check them out at ottomator.ai.
+
+--Scene Vote
+If you found StreamBuzz interesting or helpful, 
+please vote for StreamBuzz. To cast your vote 
+visit studio.ottomator.ai and vote for StreamBuzz, 
+or you could vote by clicking the voting link 
+in the description below. I appreciate it.
+
+Your feedback matters too! 
+Drop any feature suggestions in the comments—
+I’d love to hear your ideas.
+
+Thanks for watching, and I hope that StreamBuzz 
+can positively impact streamers everywhere. 
+Don’t forget to vote!
+
+I'll catch you in the next video, until then. 
+Stay Awesome, Peace!
